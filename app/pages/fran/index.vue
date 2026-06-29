@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { BadgeCheck, Gift, RefreshCcw, ScanLine, ShieldCheck } from '@lucide/vue'
 
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const posRoutes = [
   {
     method: 'POST',

@@ -56,7 +56,7 @@ async function handleSignOut() {
         <Search :size="17" />
         <input v-model="query" type="search" placeholder="Search people, orders, tickets" />
       </label>
-      <NuxtLink class="icon-button" to="/settings" title="API keys">
+      <NuxtLink v-if="user" class="icon-button" to="/settings" title="API keys">
         <KeyRound :size="18" />
       </NuxtLink>
       <a class="icon-button" href="https://github.com/wytanj/fran-crm" target="_blank" rel="noreferrer" title="Repository">
@@ -80,10 +80,6 @@ async function handleSignOut() {
       <NuxtLink v-else-if="isConfigured" class="user-button" to="/login">
         <UserRound :size="18" />
         <span>Sign in</span>
-      </NuxtLink>
-      <NuxtLink v-else class="user-button" to="/graph">
-        <UserRound :size="18" />
-        <span>Demo mode</span>
       </NuxtLink>
     </div>
   </header>

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { Building2, CreditCard, Server } from '@lucide/vue'
 
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const route = useRoute()
+const { refreshSession, startAuthListener, user } = useCrmAuth()
 
 const billingNotice = computed(() => {
   if (route.query.checkout !== 'demo') {
@@ -10,6 +15,15 @@ const billingNotice = computed(() => {
 
   return `Demo billing boundary recorded for ${route.query.email || 'the selected email'} on ${route.query.plan || 'the selected workspace mode'}.`
 })
+
+const configureSettingsPath = computed(() => user.value
+  ? '/settings'
+  : {
+      path: '/login',
+      query: {
+        next: '/settings'
+      }
+    })
 
 const modes = [
   {
@@ -28,6 +42,11 @@ const modes = [
     detail: 'Inherited crmOS billing records remain available for internal workspace accounting.'
   }
 ]
+
+onMounted(async () => {
+  startAuthListener()
+  await refreshSession()
+})
 </script>
 
 <template>
@@ -38,7 +57,9 @@ const modes = [
         <p class="eyebrow">Workspace mode</p>
         <h2>Fran CRM keeps billing and workspace setup as internal operating boundaries, not acquisition flows.</h2>
       </div>
-      <NuxtLink class="secondary-button" to="/settings">Configure Supabase</NuxtLink>
+      <NuxtLink class="secondary-button" :to="configureSettingsPath">
+        {{ user ? 'Configure Supabase' : 'Sign in to configure' }}
+      </NuxtLink>
     </div>
 
     <section class="docs-card-grid">

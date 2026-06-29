@@ -45,6 +45,30 @@ describe('agent documentation coverage', () => {
     expect(landing).toContain('to="/docs/skills"')
   })
 
+  it('keeps internal operator surfaces behind sign-in', () => {
+    const landing = read('app/pages/index.vue')
+    const sidebar = read('app/components/AppSidebar.vue')
+    const protectedPages = [
+      ['/agents', 'app/pages/agents.vue'],
+      ['/api-console', 'app/pages/api-console.vue'],
+      ['/fran', 'app/pages/fran/index.vue'],
+      ['/graph', 'app/pages/graph.vue'],
+      ['/integrations', 'app/pages/integrations.vue'],
+      ['/pricing', 'app/pages/pricing.vue'],
+      ['/schema', 'app/pages/schema.vue'],
+      ['/settings', 'app/pages/settings.vue'],
+      ['/setup', 'app/pages/setup.vue']
+    ] as const
+
+    for (const [path, page] of protectedPages) {
+      expect(read(page)).toContain("middleware: 'authenticated-client'")
+      expect(landing, `Landing should not link ${path}`).not.toContain(`to="${path}"`)
+    }
+
+    expect(sidebar).toContain('signedInNavItems')
+    expect(sidebar).toContain('visibleNavItems')
+  })
+
   it('keeps every public documentation page backed by Nuxt Content markdown', () => {
     const docsPages = ['index', 'api', 'agents', 'skills', 'model']
 

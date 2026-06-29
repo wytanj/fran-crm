@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { LogIn, UserRound } from '@lucide/vue'
+import { normalizeAuthNextPath } from '~/utils/auth-redirect'
 
+const route = useRoute()
 const email = ref('')
 const sent = ref(false)
 const error = ref('')
 const googlePending = ref(false)
 const { isConfigured, signInWithGoogle, signInWithOtp } = useCrmAuth()
+const nextPath = computed(() => {
+  const queryNext = Array.isArray(route.query.next) ? route.query.next[0] : route.query.next
+
+  return normalizeAuthNextPath(typeof queryNext === 'string' ? queryNext : undefined, '/setup')
+})
 
 async function continueWithGoogle() {
   error.value = ''
@@ -18,7 +25,7 @@ async function continueWithGoogle() {
   googlePending.value = true
 
   try {
-    await signInWithGoogle('/setup')
+    await signInWithGoogle(nextPath.value)
   } catch (signInError) {
     error.value = signInError instanceof Error ? signInError.message : 'Unable to start Google sign-in.'
   } finally {
@@ -35,7 +42,7 @@ async function signIn() {
   }
 
   try {
-    await signInWithOtp(email.value, '/setup')
+    await signInWithOtp(email.value, nextPath.value)
     sent.value = true
   } catch (signInError) {
     error.value = signInError instanceof Error ? signInError.message : 'Unable to send sign-in link.'
@@ -65,7 +72,7 @@ async function signIn() {
       </button>
       <p v-if="sent" class="notice-text">Check your email for the sign-in link. In demo mode this confirms the auth flow shape.</p>
       <p v-if="error" class="form-error">{{ error }}</p>
-      <NuxtLink class="secondary-button" to="/setup">Set up company after sign-in</NuxtLink>
+      <p class="notice-text">Company setup opens after sign-in when your user has no workspace yet.</p>
     </form>
   </div>
 </template>

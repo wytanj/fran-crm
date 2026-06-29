@@ -2,6 +2,10 @@
 import { Building2, CheckCircle2, UserRound } from '@lucide/vue'
 import type { WorkspaceSetupPayload } from '~/types/crm'
 
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const { isConfigured, refreshSession, signInWithGoogle, startAuthListener, user } = useCrmAuth()
 const { createWorkspace, error, loadWorkspaces, pending, primaryWorkspace } = useCrmWorkspaceAccess()
 

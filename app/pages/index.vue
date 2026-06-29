@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ArrowRight, BadgeCheck, Database, FileText, Gift, ShieldCheck } from '@lucide/vue'
+import { ArrowRight, BadgeCheck, BookOpen, FileText, Gift, ShieldCheck, UserRound } from '@lucide/vue'
+
+const landingRecommendations = [
+  'Keep public: what Fran CRM owns in the Fran operating stack.',
+  'Keep public: documentation for API contracts, agent rules, skills, and the shared data model.',
+  'Keep public: sign-in as the only workspace entry point.',
+  'Keep public: stable API and agent docs so POS and future MCP clients can integrate.',
+  'Move behind auth: setup, graph, schema, API console, agents, workspace mode, settings, connector state, Fran POS contract console, and live operations.'
+]
 </script>
 
 <template>
@@ -36,10 +44,10 @@ import { ArrowRight, BadgeCheck, Database, FileText, Gift, ShieldCheck } from '@
     </section>
 
     <section class="docs-card-grid">
-      <NuxtLink class="doc-card" to="/fran">
-        <span>Fran</span>
-        <h3>POS Contracts</h3>
-        <p>Member resolve, counter session, reward preview, quote, commit, and reversal boundaries.</p>
+      <NuxtLink class="doc-card" to="/login">
+        <span>Access</span>
+        <h3>Sign In</h3>
+        <p>Google and email-link auth route workspace owners to setup before internal operations.</p>
       </NuxtLink>
       <NuxtLink class="doc-card" to="/docs/api">
         <span>API</span>
@@ -76,19 +84,49 @@ import { ArrowRight, BadgeCheck, Database, FileText, Gift, ShieldCheck } from '@
       <article class="settings-panel">
         <div class="section-heading compact-heading">
           <div>
-            <p class="eyebrow">Next surfaces</p>
-            <h2>Loyalty and rewards</h2>
+            <p class="eyebrow">Landing guidance</p>
+            <h2>What stays public</h2>
           </div>
           <ShieldCheck :size="20" />
         </div>
-        <NuxtLink class="nav-link" to="/schema">
-          <Database :size="18" />
-          <span>Review Fran profile fields</span>
+        <div v-for="recommendation in landingRecommendations" :key="recommendation" class="capability-row">
+          {{ recommendation }}
+        </div>
+      </article>
+    </section>
+
+    <section class="two-column">
+      <article class="settings-panel">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="eyebrow">Next Step</p>
+            <h2>Sign in</h2>
+          </div>
+          <UserRound :size="20" />
+        </div>
+        <NuxtLink class="nav-link" to="/login">
+          <BadgeCheck :size="18" />
+          <span>Sign in with Google</span>
           <ArrowRight :size="16" />
         </NuxtLink>
+      </article>
+
+      <article class="settings-panel">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="eyebrow">Reference</p>
+            <h2>Read the contracts</h2>
+          </div>
+          <BookOpen :size="20" />
+        </div>
         <NuxtLink class="nav-link" to="/docs/api">
           <FileText :size="18" />
           <span>Read route contracts</span>
+          <ArrowRight :size="16" />
+        </NuxtLink>
+        <NuxtLink class="nav-link" to="/docs/agents">
+          <ShieldCheck :size="18" />
+          <span>Review agent boundaries</span>
           <ArrowRight :size="16" />
         </NuxtLink>
       </article>

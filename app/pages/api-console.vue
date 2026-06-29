@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const endpoints = [
   { method: 'GET', path: '/api/crm/bootstrap', purpose: 'Load workspace graph, fields, proposals, and integration state.' },
   { method: 'GET', path: '/api/graph/search?q=ava', purpose: 'Search labels, tags, and normalized entity attributes.' },

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Copy, Database, KeyRound } from '@lucide/vue'
 
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const runtime = useRuntimeConfig()
 
 const envRows = [

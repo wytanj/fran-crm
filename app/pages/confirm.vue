@@ -54,7 +54,7 @@ onMounted(async () => {
       <p class="eyebrow">Auth confirmed</p>
       <h2>{{ status }}</h2>
       <p v-if="error" class="form-error">{{ error }}</p>
-      <NuxtLink class="primary-button" to="/setup">Continue</NuxtLink>
+      <NuxtLink class="primary-button" :to="{ path: '/login', query: { next: '/setup' } }">Continue</NuxtLink>
     </section>
   </div>
 </template>

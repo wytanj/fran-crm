@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const { refreshSession, startAuthListener, user } = useCrmAuth()
 const { loadWorkspaces, primaryWorkspace } = useCrmWorkspaceAccess()
 const workspaceId = computed(() => primaryWorkspace.value?.id)

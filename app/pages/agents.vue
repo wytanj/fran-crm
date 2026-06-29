@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'authenticated-client'
+})
+
 const { data } = await useCrmBootstrap()
 const proposals = computed(() => data.value?.graph.proposals || [])
 
