@@ -1,0 +1,201 @@
+# Data Model
+
+Fran CRM models member, customer, loyalty, reward, and counter-session operations as a workspace-scoped graph.
+
+## Workspace
+
+Every organization maps to `crm_workspaces`. All operational records carry `workspace_id`; agents must not cross workspace boundaries.
+
+Related tables:
+
+- `crm_workspace_members`: workspace user and agent membership.
+- `crm_billing_customers`: inherited internal billing boundary records.
+- `crm_subscriptions`: workspace subscription or operating mode state.
+
+Workspace setup creates `crm_workspaces` first, then inserts the creator as `owner` in `crm_workspace_members`. Later CRM users, agents, and integration actors should be added under this workspace boundary rather than as global tenants.
+
+The browser should not rely on direct table access for CRM data yet. Current UI reads and writes through Nuxt API routes using `SUPABASE_DB_URL` or a server-only Supabase key; `0003_data_api_service_role_grants.sql` explicitly grants the service role Data API access for the CRM tables created in earlier migrations.
+
+## Entity Spine
+
+`crm_entities` stores the nodes of the graph:
+
+- `person`
+- `company`
+- `household`
+- `order`
+- `product`
+- `ticket`
+- `message`
+- `campaign`
+- `custom`
+
+Core properties:
+
+- `label`: human-readable display name.
+- `external_ids`: channel IDs, such as Shopify, POS, support, accounting, or imported IDs.
+- `attributes`: flexible JSON for field values.
+- `tags`: searchable tags and segmentation handles.
+- `source`: origin of the entity or latest write.
+
+## Relationship Graph
+
+`crm_relationships` stores typed edges between entities.
+
+Examples:
+
+- `placed_order`
+- `opened_ticket`
+- `works_at`
+- `belongs_to_household`
+- `belongs_to_segment`
+
+Relationship records include confidence and source so agents can distinguish imported facts from inferred links.
+
+## Base Customer Fields
+
+The current minimal commerce customer profile includes:
+
+- `email`
+- `phone`
+- `first_name`
+- `last_name`
+- `accepts_marketing`
+- `tags`
+- `note`
+- `default_address`
+- `orders_count`
+- `total_spent`
+- `currency`
+- `last_order_at`
+- `source_channel`
+- `company_name`
+- `lifecycle_stage`
+
+These are represented in the app contract as `customerFields` and in persistent workspaces through `crm_field_definitions`.
+
+## Schema Extensions
+
+Agents may propose new fields or custom entity types, but should not silently mutate schema-sensitive records.
+
+Schema field properties:
+
+- `entity_type`
+- `key`
+- `label`
+- `value_type`
+- `required`
+- `origin`
+- `enum_values`
+- `pack_key`
+- `description`
+- `help_text`
+- `sensitivity_level`
+- `pos_visible`
+- `cashier_editable`
+- `marketing_usable`
+- `ui_contexts`
+- `sort_order`
+- `metadata`
+
+Allowed `origin` values are `core`, `integration`, `custom`, and `agent`.
+
+Use `crm_agent_proposals` for schema suggestions that require review before execution.
+
+## Profile Packs
+
+Profile packs let a workspace install domain-specific customer fields without changing the CRM core tables or forking the UI.
+
+The pack layer remains workspace-scoped even though Fran installs opinionated defaults:
+
+- A pack is not owned by POS, Shopify, loyalty, beauty, or any other source system.
+- Each pack is workspace-scoped through `crm_profile_packs`.
+- Each packed field is represented through `crm_field_definitions.pack_key`.
+- Current editable values live in `crm_entities.attributes.profile_packs`.
+- Provenance and timeline records live in `crm_customer_facts`.
+
+`crm_profile_packs` stores:
+
+- `workspace_id`
+- `key`
+- `label`
+- `description`
+- `vertical`
+- `status`
+- `install_mode`
+- `metadata`
+
+Packed field uniqueness is scoped by `(workspace_id, entity_type, pack_key, key)`. Base fields without a `pack_key` keep their own uniqueness boundary. This allows different packs to reuse ordinary field keys like `notes`, `goals`, or `preferences` without colliding.
+
+Fran default packs:
+
+- `fran_member`: member number, mobile, member since, birthday, preferred store, and consent status.
+- `fran_loyalty`: tier, points balance, points expiring soon, expiry date, YTD spend, next tier, and spend to next tier.
+- `fran_beauty_profile`: skin type, skin concerns, reported sensitivities, restricted sensitivity note, preferred routine, and restricted advisor notes.
+
+Sensitivity and projection flags are part of the data contract, not only UI labels:
+
+- `pos_visible`: safe for counter-profile projections.
+- `cashier_editable`: editable from operational counter workflows.
+- `marketing_usable`: retained upstream field name for segment or campaign eligibility.
+- `sensitivity_level`: `public`, `internal`, `confidential`, or `restricted`.
+
+POS and other clients should consume context-specific projections such as `/api/v1/people/[person_id]/counter-profile` instead of reading raw field definitions directly.
+
+## Customer Memory Foundation
+
+The CRM now has Phase 1 customer-memory tables for cross-repo facts:
+
+- `crm_events`: idempotent source events from POS, loyalty, ecommerce, partner channels, or future integration workers.
+- `crm_external_links`: durable links between CRM entities and external customer references.
+- `crm_customer_facts`: normalized customer facts derived from events.
+- `crm_consent_records`: consent and contactability history.
+- `crm_customer_profiles`: computed customer read model with activity, value, affinity, intent, provenance, and sensitivity level.
+- `crm_segment_memberships`: segment membership projections.
+- `crm_metric_definitions`: workspace-owned generic metric registry.
+
+Every source write should carry:
+
+- `event_id`
+- `event_type`
+- `workspace_id`
+- `source_system`
+- `occurred_at`
+- `idempotency_key`
+- `actor`
+- `subject`
+- `context`
+- `payload`
+- `schema_version`
+
+Fran CRM should keep customer graph, consent, customer memory, member identity, loyalty decisions, reward decisions, segments, and semantic query foundations. POS and SKUMS remain the source of truth for checkout execution and product taxonomy.
+
+## Commerce Return Eligibility
+
+crmOS now keeps a commerce memory layer for counter-safe return checks. POS remains the system of record for return execution, tender movement, receipt truth, inventory disposition, register audit, and POS outbox events. crmOS owns identity resolution, purchase memory, return policy evaluation, matched-order evidence, and consumable authorization references.
+
+Commerce read-model tables:
+
+- `crm_commerce_orders`: workspace-scoped orders projected from POS, ecommerce, and future commerce events.
+- `crm_commerce_order_lines`: purchased line items with SKU/product identity, purchased quantity, returned quantity, return deadline, and policy snapshot.
+- `crm_commerce_return_facts`: idempotent return-line facts from completed return events. These prevent replayed outbox events from incrementing returned quantity twice.
+
+Policy and decision tables:
+
+- `crm_return_policies`: versioned workspace return-policy rules. A published policy may define return window, allowed actions, no-matched-sale behavior, outside-window behavior, and decision cache duration.
+- `crm_return_eligibility_checks`: one normalized POS return-check request and the resulting decision. Uniqueness is `(workspace_id, request_hash)`.
+- `crm_return_authorizations`: consumable authorization issued for `eligible`, `exchange_only`, or `store_credit_only` decisions. A completed POS return consumes the authorization.
+
+Stable decisions are:
+
+- `eligible`
+- `exchange_only`
+- `store_credit_only`
+- `manager_review`
+- `ineligible`
+- `not_found`
+- `insufficient_context`
+
+The POS-facing eligibility response must stay narrow. It may include matched order date, source, purchased quantity, already returned quantity, returnable quantity, deadline, allowed actions, reason codes, and manager requirement. It must not expose unrelated purchases, full customer graph relationships, segments, or confidential profile fields.
+
+No matched sale is a policy decision, not a POS guess. A published policy can route those requests to manager review, store credit, exchange-only, ineligible, or not-found outcomes without changing POS code.

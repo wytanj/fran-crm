@@ -1,0 +1,52 @@
+<script setup lang="ts">
+const route = useRoute()
+const status = ref('Checking your session...')
+const error = ref('')
+const { getClient, isConfigured, refreshSession, startAuthListener } = useCrmAuth()
+const { loadWorkspaces } = useCrmWorkspaceAccess()
+
+onMounted(async () => {
+  if (!isConfigured.value) {
+    status.value = 'Demo mode is active.'
+    return
+  }
+
+  try {
+    startAuthListener()
+    const client = getClient()
+    const code = Array.isArray(route.query.code) ? route.query.code[0] : route.query.code
+
+    if (client && code) {
+      const { error: exchangeError } = await client.auth.exchangeCodeForSession(code)
+
+      if (exchangeError) {
+        throw exchangeError
+      }
+    }
+
+    const activeSession = await refreshSession()
+
+    if (!activeSession) {
+      status.value = 'No active session was found.'
+      return
+    }
+
+    const access = await loadWorkspaces()
+    await navigateTo(access?.requiresSetup ? '/setup' : '/graph')
+  } catch (confirmError) {
+    error.value = confirmError instanceof Error ? confirmError.message : 'Unable to confirm this sign-in link.'
+    status.value = 'Sign-in confirmation failed.'
+  }
+})
+</script>
+
+<template>
+  <div class="auth-page">
+    <section class="auth-panel">
+      <p class="eyebrow">Auth confirmed</p>
+      <h2>{{ status }}</h2>
+      <p v-if="error" class="form-error">{{ error }}</p>
+      <NuxtLink class="primary-button" to="/setup">Continue</NuxtLink>
+    </section>
+  </div>
+</template>

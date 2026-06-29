@@ -1,0 +1,27 @@
+{
+  "name": "fran-crm",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit",
+    "prepare": "nuxt prepare"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.17.0",
+    "@supabase/supabase-js": "2.106.2",
+    "nuxt": "latest",
+    "postgres": "^3.4.9",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "^4.1.7",
+    "vue-tsc": "latest"
+  }
+}

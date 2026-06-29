@@ -1,0 +1,120 @@
+import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
+
+let browserSupabaseClient: SupabaseClient | null = null
+let authListenerStarted = false
+
+export function useCrmAuth() {
+  const runtime = useRuntimeConfig()
+  const session = useState<Session | null>('crm-auth-session', () => null)
+  const loading = useState('crm-auth-loading', () => false)
+  const error = useState('crm-auth-error', () => '')
+
+  const isConfigured = computed(() => Boolean(runtime.public.supabaseUrl && runtime.public.supabaseKey))
+  const user = computed(() => session.value?.user || null)
+
+  function getClient() {
+    if (import.meta.server || !isConfigured.value) {
+      return null
+    }
+
+    if (!browserSupabaseClient) {
+      browserSupabaseClient = createClient(
+        String(runtime.public.supabaseUrl),
+        String(runtime.public.supabaseKey),
+        {
+          auth: {
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            persistSession: true
+          }
+        }
+      )
+    }
+
+    return browserSupabaseClient
+  }
+
+  function startAuthListener() {
+    const client = getClient()
+
+    if (!client || authListenerStarted) {
+      return
+    }
+
+    authListenerStarted = true
+    client.auth.onAuthStateChange((_event, nextSession) => {
+      session.value = nextSession
+    })
+  }
+
+  async function refreshSession() {
+    const client = getClient()
+
+    if (!client) {
+      session.value = null
+      return null
+    }
+
+    loading.value = true
+    error.value = ''
+
+    try {
+      const { data, error: sessionError } = await client.auth.getSession()
+
+      if (sessionError) {
+        throw sessionError
+      }
+
+      session.value = data.session
+      return data.session
+    } catch (sessionFailure) {
+      error.value = sessionFailure instanceof Error ? sessionFailure.message : 'Unable to load session.'
+      session.value = null
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function signInWithOtp(email: string) {
+    const client = getClient()
+
+    if (!client) {
+      return
+    }
+
+    const { error: signInError } = await client.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${runtime.public.siteUrl}/confirm`
+      }
+    })
+
+    if (signInError) {
+      throw signInError
+    }
+  }
+
+  async function signOut() {
+    const client = getClient()
+
+    if (client) {
+      await client.auth.signOut()
+    }
+
+    session.value = null
+  }
+
+  return {
+    error,
+    getClient,
+    isConfigured,
+    loading,
+    refreshSession,
+    session,
+    signInWithOtp,
+    signOut,
+    startAuthListener,
+    user
+  }
+}
