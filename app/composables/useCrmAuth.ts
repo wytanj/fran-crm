@@ -1,4 +1,5 @@
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
+import { buildAuthRedirectUrl, resolveAuthBaseUrl } from '~/utils/auth-redirect'
 
 let browserSupabaseClient: SupabaseClient | null = null
 let authListenerStarted = false
@@ -25,6 +26,7 @@ export function useCrmAuth() {
           auth: {
             autoRefreshToken: true,
             detectSessionInUrl: true,
+            flowType: 'pkce',
             persistSession: true
           }
         }
@@ -76,7 +78,43 @@ export function useCrmAuth() {
     }
   }
 
-  async function signInWithOtp(email: string) {
+  function getRedirectUrl(nextPath = '/setup') {
+    const currentOrigin = import.meta.client ? window.location.origin : undefined
+    const baseUrl = resolveAuthBaseUrl(String(runtime.public.siteUrl || ''), currentOrigin)
+
+    return buildAuthRedirectUrl(baseUrl, nextPath)
+  }
+
+  async function signInWithGoogle(nextPath = '/setup') {
+    const client = getClient()
+
+    if (!client) {
+      return
+    }
+
+    loading.value = true
+    error.value = ''
+
+    try {
+      const { error: signInError } = await client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getRedirectUrl(nextPath)
+        }
+      })
+
+      if (signInError) {
+        throw signInError
+      }
+    } catch (signInFailure) {
+      error.value = signInFailure instanceof Error ? signInFailure.message : 'Unable to start Google sign-in.'
+      throw signInFailure
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function signInWithOtp(email: string, nextPath = '/setup') {
     const client = getClient()
 
     if (!client) {
@@ -86,7 +124,7 @@ export function useCrmAuth() {
     const { error: signInError } = await client.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${runtime.public.siteUrl}/confirm`
+        emailRedirectTo: getRedirectUrl(nextPath)
       }
     })
 
@@ -112,6 +150,7 @@ export function useCrmAuth() {
     loading,
     refreshSession,
     session,
+    signInWithGoogle,
     signInWithOtp,
     signOut,
     startAuthListener,

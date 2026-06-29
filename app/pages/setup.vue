@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Building2, CheckCircle2 } from '@lucide/vue'
+import { Building2, CheckCircle2, UserRound } from '@lucide/vue'
 import type { WorkspaceSetupPayload } from '~/types/crm'
 
-const { isConfigured, refreshSession, startAuthListener, user } = useCrmAuth()
+const { isConfigured, refreshSession, signInWithGoogle, startAuthListener, user } = useCrmAuth()
 const { createWorkspace, error, loadWorkspaces, pending, primaryWorkspace } = useCrmWorkspaceAccess()
 
 const form = reactive<WorkspaceSetupPayload>({
@@ -11,8 +11,61 @@ const form = reactive<WorkspaceSetupPayload>({
   plan: 'hosted_growth'
 })
 const created = ref(false)
+const googlePending = ref(false)
+const authError = ref('')
+const slugEdited = ref(false)
 
 const mustSignIn = computed(() => isConfigured.value && !user.value)
+const submitLabel = computed(() => {
+  if (primaryWorkspace.value) {
+    return 'Open company workspace'
+  }
+
+  return pending.value ? 'Creating workspace' : 'Create company workspace'
+})
+
+function normalizeSlug(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 54)
+}
+
+function titleCase(input: string) {
+  return input
+    .split(/[-_.\s]+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ')
+}
+
+function inferCompanyName(email?: string) {
+  const domain = email?.split('@')[1]?.split('.')[0] || ''
+  const blockedDomains = new Set(['gmail', 'googlemail', 'hotmail', 'icloud', 'me', 'outlook', 'proton', 'yahoo'])
+
+  if (!domain || blockedDomains.has(domain)) {
+    return ''
+  }
+
+  return titleCase(domain)
+}
+
+function fillSuggestedCompany() {
+  if (primaryWorkspace.value || form.companyName) {
+    return
+  }
+
+  const suggestedName = inferCompanyName(user.value?.email)
+
+  if (!suggestedName) {
+    return
+  }
+
+  form.companyName = suggestedName
+  form.slug = normalizeSlug(suggestedName)
+}
 
 onMounted(async () => {
   startAuthListener()
@@ -25,10 +78,49 @@ onMounted(async () => {
   if (primaryWorkspace.value) {
     form.companyName = primaryWorkspace.value.name
     form.slug = primaryWorkspace.value.slug
+  } else {
+    fillSuggestedCompany()
   }
 })
 
+watch(user, fillSuggestedCompany)
+
+watch(() => form.companyName, (companyName) => {
+  if (!slugEdited.value || !form.slug) {
+    form.slug = normalizeSlug(companyName)
+  }
+})
+
+function handleSlugInput() {
+  slugEdited.value = true
+  form.slug = normalizeSlug(form.slug || '')
+}
+
+async function continueWithGoogle() {
+  authError.value = ''
+
+  if (!isConfigured.value) {
+    authError.value = 'Supabase Auth is not configured for this environment.'
+    return
+  }
+
+  googlePending.value = true
+
+  try {
+    await signInWithGoogle('/setup')
+  } catch (signInError) {
+    authError.value = signInError instanceof Error ? signInError.message : 'Unable to start Google sign-in.'
+  } finally {
+    googlePending.value = false
+  }
+}
+
 async function submitSetup() {
+  if (primaryWorkspace.value?.id) {
+    await navigateTo('/graph')
+    return
+  }
+
   const workspace = await createWorkspace({
     companyName: form.companyName,
     slug: form.slug,
@@ -68,6 +160,13 @@ async function submitSetup() {
 
         <div v-if="mustSignIn" class="notice-bar">
           Sign in first so the company can be assigned to your user as owner.
+          <div class="setup-auth-actions">
+            <button class="primary-button" type="button" :disabled="googlePending || !isConfigured" @click="continueWithGoogle">
+              <UserRound :size="17" />
+              <span>{{ googlePending ? 'Opening Google' : 'Continue with Google' }}</span>
+            </button>
+            <NuxtLink class="secondary-button" to="/login">Use email link</NuxtLink>
+          </div>
         </div>
 
         <label>
@@ -76,7 +175,7 @@ async function submitSetup() {
         </label>
         <label>
           <span>Workspace slug</span>
-          <input v-model="form.slug" type="text" placeholder="acme-retail" pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+          <input v-model="form.slug" type="text" placeholder="acme-retail" pattern="[a-z0-9]+(-[a-z0-9]+)*" @input="handleSlugInput" />
         </label>
         <label>
           <span>Workspace mode</span>
@@ -88,11 +187,11 @@ async function submitSetup() {
 
         <button class="primary-button" type="submit" :disabled="pending || mustSignIn">
           <CheckCircle2 :size="17" />
-          <span>{{ pending ? 'Creating workspace' : 'Create company workspace' }}</span>
+          <span>{{ submitLabel }}</span>
         </button>
 
-        <NuxtLink v-if="mustSignIn" class="secondary-button" to="/login">Sign in</NuxtLink>
         <p v-if="created" class="notice-text">Workspace created.</p>
+        <p v-if="authError" class="form-error">{{ authError }}</p>
         <p v-if="error" class="form-error">{{ error }}</p>
       </form>
 

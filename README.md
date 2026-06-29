@@ -46,6 +46,7 @@ npm run dev
 Apply SQL files in `supabase/migrations` to the target Supabase project, then set local environment values in `.env`:
 
 ```bash
+NUXT_PUBLIC_SITE_URL=http://localhost:3000
 NUXT_PUBLIC_SUPABASE_URL=...
 NUXT_PUBLIC_SUPABASE_KEY=...
 SUPABASE_DB_URL=...
@@ -54,6 +55,8 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 The browser-facing Supabase key is for Auth. CRM reads and writes should flow through workspace-aware Nuxt API routes backed by `SUPABASE_DB_URL` or a server-only Supabase key.
+
+For Google sign-up, enable the Google provider in Supabase Auth and allow the app callback URL, for example `${NUXT_PUBLIC_SITE_URL}/confirm`. The app sends new Google and magic-link users through `/confirm?next=/setup`, then creates the master company workspace through `POST /api/crm/workspaces`.
 
 ## Verification
 

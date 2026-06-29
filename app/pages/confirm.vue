@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { normalizeAuthNextPath } from '~/utils/auth-redirect'
+
 const route = useRoute()
 const status = ref('Checking your session...')
 const error = ref('')
 const { getClient, isConfigured, refreshSession, startAuthListener } = useCrmAuth()
 const { loadWorkspaces } = useCrmWorkspaceAccess()
+
+const nextPath = computed(() => {
+  const queryNext = Array.isArray(route.query.next) ? route.query.next[0] : route.query.next
+
+  return normalizeAuthNextPath(typeof queryNext === 'string' ? queryNext : undefined, '')
+})
 
 onMounted(async () => {
   if (!isConfigured.value) {
@@ -32,7 +40,7 @@ onMounted(async () => {
     }
 
     const access = await loadWorkspaces()
-    await navigateTo(access?.requiresSetup ? '/setup' : '/graph')
+    await navigateTo(access?.requiresSetup ? '/setup' : nextPath.value || '/graph')
   } catch (confirmError) {
     error.value = confirmError instanceof Error ? confirmError.message : 'Unable to confirm this sign-in link.'
     status.value = 'Sign-in confirmation failed.'
