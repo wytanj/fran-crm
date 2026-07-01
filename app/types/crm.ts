@@ -126,3 +126,134 @@ export interface CrmGraphResponse {
     status: 'draft' | 'needs_approval' | 'approved'
   }>
 }
+
+export type FranMemberTier = 'Bronze' | 'Silver' | 'Gold'
+export type FranSignupBucket = 'day' | 'week' | 'month'
+
+export interface FranTierCount {
+  tier: FranMemberTier
+  count: number
+  share: number
+}
+
+export interface FranTierTrendPoint {
+  period: string
+  evaluatedAt: string
+  bronze: number
+  silver: number
+  gold: number
+  total: number
+  source: 'evaluation_cycle' | 'current_snapshot' | 'demo'
+}
+
+export interface FranSignupTrendPoint {
+  period: string
+  count: number
+  cumulative: number
+}
+
+export interface FranEvaluationCycleAnalytics {
+  id: string
+  cycleKey: string
+  label: string
+  evaluatedAt: string
+  memberCount: number
+  tierCounts: Record<FranMemberTier, number>
+  upgradedCount: number
+  downgradedCount: number
+  retainedCount: number
+  source: string
+}
+
+export interface FranAnalyticsDateRange {
+  from: string
+  to: string
+}
+
+export interface FranLoyaltyPointsTrendPoint {
+  period: string
+  issued: number
+  redeemed: number
+}
+
+export interface FranLoyaltyPointsAnalytics {
+  dateRange: FranAnalyticsDateRange
+  pointValueMinor: number
+  totalIssued: number
+  totalRedeemed: number
+  redemptionRate: number
+  outstandingPoints: number
+  liabilityMinor: number
+  expiryWindowDays: number
+  expiringPoints: number
+  expiringMemberCount: number
+  nextExpiryDate: string | null
+  trend: FranLoyaltyPointsTrendPoint[]
+}
+
+export interface FranCustomerSpendRow {
+  id: string
+  name: string
+  mobile: string | null
+  tier: FranMemberTier | null
+  pointsBalance: number
+  lifetimeSpendMinor: number
+  trailing12MonthSpendMinor: number
+  lastTransactionAt: string | null
+}
+
+export interface FranCustomerLifecycleRow extends FranCustomerSpendRow {
+  daysSinceLastTransaction: number | null
+}
+
+export interface FranBirthdayMemberRow {
+  id: string
+  name: string
+  mobile: string | null
+  tier: FranMemberTier | null
+  pointsBalance: number
+  birthday: string
+}
+
+export interface FranCampaignPerformanceRow {
+  id: string
+  name: string
+  membersReached: number
+  transactions: number
+  pointsAwarded: number
+  revenueMinor: number
+  startDate: string | null
+  endDate: string | null
+}
+
+export interface FranCustomerAnalytics {
+  topLimit: number
+  atRiskDays: number
+  lapsedFromDays: number
+  lapsedToDays: number
+  topSpenders: {
+    lifetime: FranCustomerSpendRow[]
+    trailing12Month: FranCustomerSpendRow[]
+  }
+  atRiskCustomers: FranCustomerLifecycleRow[]
+  lapsedCustomers: FranCustomerLifecycleRow[]
+  birthdayMembers: FranBirthdayMemberRow[]
+  campaignPerformance: FranCampaignPerformanceRow[]
+}
+
+export interface FranAnalyticsResponse {
+  mode: 'demo' | 'supabase'
+  warning?: string
+  generatedAt: string
+  snapshot: {
+    asOf: string
+    totalMembers: number
+    unassignedCount: number
+    tierCounts: FranTierCount[]
+  }
+  tierTrend: FranTierTrendPoint[]
+  signupTrends: Record<FranSignupBucket, FranSignupTrendPoint[]>
+  evaluationCycles: FranEvaluationCycleAnalytics[]
+  loyaltyPoints: FranLoyaltyPointsAnalytics
+  customerAnalytics: FranCustomerAnalytics
+}

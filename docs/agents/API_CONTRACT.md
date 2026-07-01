@@ -55,6 +55,61 @@ Rules:
 - Backend projection logic filters restricted fields such as `birthday`, `ytd_spend`, `reported_sensitivity_note`, and `advisor_notes`.
 - Missing member context returns `status: none` and does not expose raw graph data.
 
+### `GET /api/fran/analytics`
+
+Returns Fran loyalty analytics for the requested workspace.
+
+Query:
+
+- `workspaceId`: required for Supabase-backed reads.
+- `from`: optional ISO date (`YYYY-MM-DD`) for points-issued and points-redeemed period start. Defaults to 30 days before `to`.
+- `to`: optional ISO date (`YYYY-MM-DD`) for points-issued and points-redeemed period end. Defaults to the current date.
+- `pointValueMinor`: optional integer minor-currency value per point. Defaults to `1`, equivalent to `$0.01`.
+- `expiryWindowDays`: optional integer from `1` to `365`. Defaults to `30`.
+- `topLimit`: optional integer from `1` to `100` for top-spender lists. Defaults to `10`.
+- `atRiskDays`: optional integer from `1` to `365`. Defaults to `60`.
+- `lapsedFromDays`: optional integer from `1` to `730`. Defaults to `90`.
+- `lapsedToDays`: optional integer from `1` to `1095`. Defaults to `180`.
+
+Auth:
+
+- Supabase mode requires `Authorization: Bearer <access_token>`.
+- The user must be a member of the workspace.
+- Server persistence uses `SUPABASE_DB_URL` when present, otherwise `SUPABASE_SERVICE_ROLE_KEY`.
+
+Response shape:
+
+- `mode`: `demo` or `supabase`.
+- `snapshot.totalMembers`: current Fran member profile count.
+- `snapshot.tierCounts`: current Bronze, Silver, and Gold counts with share.
+- `signupTrends.day`, `signupTrends.week`, and `signupTrends.month`: new member sign-up counts by bucket with cumulative totals.
+- `tierTrend`: Bronze, Silver, and Gold counts over evaluation cycles, with the current snapshot appended when it differs from the last cycle.
+- `evaluationCycles`: cycle-level member count, tier counts, upgraded count, downgraded count, and retained count.
+- `loyaltyPoints.dateRange`: points analytics window.
+- `loyaltyPoints.totalIssued`: points earned or issued in the requested period.
+- `loyaltyPoints.totalRedeemed`: points spent on discounts in the requested period.
+- `loyaltyPoints.redemptionRate`: `totalRedeemed / totalIssued`; `0` when no points were issued.
+- `loyaltyPoints.outstandingPoints`: total current unredeemed points across members.
+- `loyaltyPoints.liabilityMinor`: `outstandingPoints * pointValueMinor`.
+- `loyaltyPoints.expiringPoints`, `expiringMemberCount`, and `nextExpiryDate`: points and member count inside the expiry notification window.
+- `loyaltyPoints.trend`: daily issued and redeemed point totals for the requested window when the window is 370 days or less; wider windows return sparse event days only.
+- `customerAnalytics.topSpenders.lifetime`: top member rows by lifetime spend.
+- `customerAnalytics.topSpenders.trailing12Month`: top member rows by trailing 12-month spend.
+- `customerAnalytics.atRiskCustomers`: members with a known last transaction older than `atRiskDays` and newer than `lapsedFromDays`.
+- `customerAnalytics.lapsedCustomers`: members with a known last transaction between `lapsedFromDays` and `lapsedToDays`.
+- `customerAnalytics.birthdayMembers`: members whose `fran_member.birthday` falls in the current calendar month, including name, mobile, tier, and points balance.
+- `customerAnalytics.campaignPerformance`: campaign-level members reached, transactions, points awarded, and revenue.
+
+Rules:
+
+- Current snapshot is derived from `crm_entities.attributes.profile_packs.fran_loyalty.tier`.
+- Member sign-up date is `fran_member.member_since` when present, falling back to the person entity `created_at`.
+- Historical tier movement comes from `fran_loyalty_tier_evaluation_cycles`; if the migration is not applied, the route still returns current snapshot and sign-up trends with a warning.
+- Points issued and redeemed are aggregated from `crm_events` using loyalty event types or explicit payload keys such as `pointsIssued`, `pointsEarned`, `pointsRedeemed`, and `points`.
+- Outstanding liability and expiry risk are derived from `fran_loyalty.points_balance`, `points_expiring_soon`, and `points_expiry_date`.
+- Top-spender, lifecycle, birthday, and campaign exports are compact operator lists. They expose only the fields required by the dashboard and do not expose full graph rows.
+- Transaction and campaign calculations use `crm_events` with CRM person references in `subject.customerKey`, `subject.personId`, `context.personId`, or `payload.personId`.
+
 ### `POST /api/v1/events`
 
 Accepts source-system facts from POS, loyalty, ecommerce, partner channels, or future integration workers.

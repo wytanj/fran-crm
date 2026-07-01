@@ -29,6 +29,23 @@ The current buildout ships mocked values only:
 
 These values are fixtures for counter-session contract development. They are not yet backed by loyalty ledger tables.
 
+## Analytics
+
+Fran loyalty analytics are aggregate reads over the member and tier spine:
+
+- current Bronze, Silver, and Gold counts come from `crm_entities.attributes.profile_packs.fran_loyalty.tier`
+- new sign-ups use `crm_entities.attributes.profile_packs.fran_member.member_since`, falling back to `crm_entities.created_at`
+- evaluation-cycle trend and movement counts are recorded in `fran_loyalty_tier_evaluation_cycles`
+- points issued and redeemed are aggregated from `crm_events` for the requested period
+- redemption rate is `points redeemed / points issued`, returning `0` when no points were issued
+- outstanding liability is current unredeemed points multiplied by the configured minor-currency value per point
+- expiry risk uses `points_expiring_soon` and `points_expiry_date` inside the notification window
+- top spenders and lifecycle inactivity lists are derived from transaction events with CRM person references
+- birthday member lists use the Fran member and loyalty profile packs
+- campaign performance aggregates campaign reach, transaction, points-awarded, and revenue events
+
+The cycle table stores aggregate totals only: member count, tier counts, upgraded count, downgraded count, retained count, optional policy reference, and provenance metadata. Member-level tier movement should remain in source events, facts, execution logs, or a future detailed cycle-result table when the loyalty evaluator needs drilldown. Exportable operator lists must stay compact and workspace-scoped. A future loyalty ledger can replace event-derived point-flow aggregates without changing the operator dashboard contract.
+
 ## Mutation Rules
 
 Agents may propose:

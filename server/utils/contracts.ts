@@ -64,6 +64,19 @@ export const workspaceScopedQuerySchema = z.object({
   workspaceId: z.string().uuid().optional()
 })
 
+const optionalAnalyticsDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+
+export const franAnalyticsQuerySchema = workspaceScopedQuerySchema.extend({
+  from: optionalAnalyticsDateSchema,
+  to: optionalAnalyticsDateSchema,
+  pointValueMinor: z.coerce.number().int().min(0).max(1000).default(1),
+  expiryWindowDays: z.coerce.number().int().min(1).max(365).default(30),
+  topLimit: z.coerce.number().int().min(1).max(100).default(10),
+  atRiskDays: z.coerce.number().int().min(1).max(365).default(60),
+  lapsedFromDays: z.coerce.number().int().min(1).max(730).default(90),
+  lapsedToDays: z.coerce.number().int().min(1).max(1095).default(180)
+})
+
 export const workspaceSetupPayloadSchema = z.object({
   companyName: z.string().trim().min(2).max(120),
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(64).optional().or(z.literal('')),
@@ -146,6 +159,7 @@ export type SchemaFieldPayload = z.infer<typeof schemaFieldPayloadSchema>
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>
 export type CrmEventPayload = z.infer<typeof crmEventPayloadSchema>
 export type WorkspaceSetupPayload = z.infer<typeof workspaceSetupPayloadSchema>
+export type FranAnalyticsQuery = z.infer<typeof franAnalyticsQuerySchema>
 export type ProfilePackInstallPayload = z.infer<typeof profilePackInstallPayloadSchema>
 export type ProfileFieldUpdatePayload = z.infer<typeof profileFieldUpdatePayloadSchema>
 export type ReturnEligibilityPayload = z.infer<typeof returnEligibilityPayloadSchema>

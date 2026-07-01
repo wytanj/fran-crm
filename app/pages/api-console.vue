@@ -5,6 +5,7 @@ definePageMeta({
 
 const endpoints = [
   { method: 'GET', path: '/api/crm/bootstrap', purpose: 'Load workspace graph, fields, proposals, and integration state.' },
+  { method: 'GET', path: '/api/fran/analytics', purpose: 'Load Fran loyalty tier snapshot, sign-up trends, and evaluation-cycle movement.' },
   { method: 'GET', path: '/api/graph/search?q=ava', purpose: 'Search labels, tags, and normalized entity attributes.' },
   { method: 'GET', path: '/api/profile-packs', purpose: 'List installable and installed domain profile packs for a workspace.' },
   { method: 'GET', path: '/api/profile-packs/fran_beauty_profile', purpose: 'Inspect a dynamic Fran profile pack definition and its fields.' },

@@ -168,6 +168,28 @@ Expected output:
 - safe beauty profile warnings
 - source freshness
 
+### Fran Loyalty Analytics Read
+
+Read aggregate loyalty analytics without exposing raw member profiles.
+
+Expected inputs:
+
+- `workspace_id`
+
+Expected output:
+
+- current Bronze, Silver, and Gold member counts
+- new sign-up trend by day, week, and month
+- tier-count trend over evaluation cycles
+- upgraded and downgraded member counts per evaluation cycle
+- points issued, points redeemed, and redemption rate for a date range
+- outstanding points liability and expiry notification exposure
+- top spenders by lifetime and trailing 12-month spend
+- at-risk and lapsed member export lists based on configurable inactivity thresholds
+- birthday members for the current calendar month
+- campaign reach, transaction, points-awarded, and revenue performance
+- warning when historical cycle storage has not been migrated yet
+
 ## Restricted Skills
 
 These should require explicit capability grants:

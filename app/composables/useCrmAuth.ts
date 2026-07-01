@@ -25,7 +25,7 @@ export function useCrmAuth() {
         {
           auth: {
             autoRefreshToken: true,
-            detectSessionInUrl: true,
+            detectSessionInUrl: false,
             flowType: 'pkce',
             persistSession: true
           }

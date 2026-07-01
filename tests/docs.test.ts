@@ -50,6 +50,7 @@ describe('agent documentation coverage', () => {
     const sidebar = read('app/components/AppSidebar.vue')
     const protectedPages = [
       ['/agents', 'app/pages/agents.vue'],
+      ['/analytics', 'app/pages/analytics.vue'],
       ['/api-console', 'app/pages/api-console.vue'],
       ['/fran', 'app/pages/fran/index.vue'],
       ['/graph', 'app/pages/graph.vue'],

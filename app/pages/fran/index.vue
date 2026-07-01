@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BadgeCheck, Gift, RefreshCcw, ScanLine, ShieldCheck } from '@lucide/vue'
+import { BadgeCheck, BarChart3, Gift, RefreshCcw, ScanLine, ShieldCheck } from '@lucide/vue'
 
 definePageMeta({
   middleware: 'authenticated-client'
@@ -15,6 +15,11 @@ const posRoutes = [
     method: 'POST',
     path: '/fran/pos/counter-session',
     purpose: 'Create the compact POS projection for member identity, loyalty, rewards, and safe beauty context.'
+  },
+  {
+    method: 'GET',
+    path: '/api/fran/analytics',
+    purpose: 'Read aggregate tier mix, sign-up trends, and evaluation-cycle movement for one workspace.'
   },
   {
     method: 'POST',
@@ -42,7 +47,8 @@ const guardrails = [
   { icon: ScanLine, label: 'POS reads compact decision routes, not raw graph tables.' },
   { icon: ShieldCheck, label: 'Restricted fields stay filtered by backend projection logic.' },
   { icon: RefreshCcw, label: 'Preview never mutates points; commit and reverse are idempotent.' },
-  { icon: BadgeCheck, label: 'Published loyalty policies decide tier progress and reward eligibility.' }
+  { icon: BadgeCheck, label: 'Published loyalty policies decide tier progress and reward eligibility.' },
+  { icon: BarChart3, label: 'Analytics stay aggregate and workspace-scoped.' }
 ]
 </script>
 

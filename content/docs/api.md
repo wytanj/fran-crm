@@ -57,6 +57,30 @@ Payload:
 
 The response includes member identity, POS-visible profile fields, tier badge, points balance, reward availability, safe beauty warnings, and source freshness. Restricted notes are filtered by backend projection logic.
 
+## GET /api/fran/analytics
+
+Returns workspace-scoped Fran loyalty analytics. Supabase-backed calls require `workspaceId`, a bearer access token, and workspace membership.
+
+Query parameters:
+
+- `workspaceId`: required for Supabase-backed reads.
+- `from` and `to`: optional ISO dates for the points analytics period.
+- `pointValueMinor`: minor-currency value per point, defaulting to `1`.
+- `expiryWindowDays`: notification window for expiring points, defaulting to `30`.
+- `topLimit`: number of top spenders to return, defaulting to `10`.
+- `atRiskDays`, `lapsedFromDays`, and `lapsedToDays`: lifecycle thresholds, defaulting to `60`, `90`, and `180`.
+
+Response fields:
+
+- `snapshot`: current member count plus Bronze, Silver, and Gold counts.
+- `signupTrends`: new member sign-ups grouped by day, week, and month.
+- `tierTrend`: Bronze, Silver, and Gold counts over evaluation cycles plus the latest current snapshot when it differs.
+- `evaluationCycles`: per-cycle member count, tier counts, upgraded count, downgraded count, and retained count.
+- `loyaltyPoints`: period points issued, points redeemed, redemption rate, outstanding points liability, expiry risk, and issued-vs-redeemed trend.
+- `customerAnalytics`: top spenders, at-risk members, lapsed members, birthday members for the current calendar month, and campaign performance.
+
+Current snapshot is read from `crm_entities.attributes.profile_packs`. Sign-up date uses `fran_member.member_since` with entity creation date as fallback. Historical movement uses `fran_loyalty_tier_evaluation_cycles` after the analytics migration is applied. Points, spend, lifecycle, and campaign metrics are derived from `crm_events`, while current liability, birthdays, and tier fields come from Fran profile packs.
+
 ## POST /api/v1/events
 
 Accepts idempotent source-system facts from POS, loyalty, ecommerce, partner channels, or future integration workers.

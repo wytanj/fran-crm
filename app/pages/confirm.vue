@@ -13,6 +13,16 @@ const nextPath = computed(() => {
   return normalizeAuthNextPath(typeof queryNext === 'string' ? queryNext : undefined, '')
 })
 
+function resolveConfirmErrorMessage(confirmError: unknown) {
+  const message = confirmError instanceof Error ? confirmError.message : 'Unable to confirm this sign-in link.'
+
+  if (message.toLowerCase().includes('code verifier')) {
+    return 'This sign-in link must be opened in the same browser and app URL where sign-in was started. Please start sign-in again.'
+  }
+
+  return message
+}
+
 onMounted(async () => {
   if (!isConfigured.value) {
     status.value = 'Demo mode is active.'
@@ -40,9 +50,9 @@ onMounted(async () => {
     }
 
     const access = await loadWorkspaces()
-    await navigateTo(access?.requiresSetup ? '/setup' : nextPath.value || '/graph')
+    await navigateTo(access?.requiresSetup ? '/setup' : nextPath.value || '/graph', { replace: true })
   } catch (confirmError) {
-    error.value = confirmError instanceof Error ? confirmError.message : 'Unable to confirm this sign-in link.'
+    error.value = resolveConfirmErrorMessage(confirmError)
     status.value = 'Sign-in confirmation failed.'
   }
 })

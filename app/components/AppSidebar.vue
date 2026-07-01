@@ -4,6 +4,7 @@ import {
   Bot,
   Braces,
   Building2,
+  BarChart3,
   Database,
   FileText,
   GitFork,
@@ -20,6 +21,7 @@ const navItems = [
 
 const signedInNavItems = [
   { label: 'Graph', to: '/graph', icon: Database },
+  { label: 'Analytics', to: '/analytics', icon: BarChart3 },
   { label: 'Setup', to: '/setup', icon: Building2 },
   { label: 'Schema', to: '/schema', icon: Braces },
   { label: 'API', to: '/api-console', icon: GitFork },

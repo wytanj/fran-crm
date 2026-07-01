@@ -142,6 +142,34 @@ Sensitivity and projection flags are part of the data contract, not only UI labe
 
 POS and other clients should consume context-specific projections such as `/api/v1/people/[person_id]/counter-profile` instead of reading raw field definitions directly.
 
+## Fran Loyalty Analytics
+
+`fran_loyalty_tier_evaluation_cycles` stores workspace-scoped aggregate history for tier evaluation runs.
+
+Core properties:
+
+- `cycle_key`: stable workspace-local cycle identifier, such as `2026-06`.
+- `label`: human-readable cycle label.
+- `evaluated_at`: when the cycle was completed or recorded.
+- `member_count`: total members evaluated.
+- `bronze_count`, `silver_count`, `gold_count`: tier counts at the cycle boundary.
+- `upgraded_count`, `downgraded_count`, `retained_count`: movement totals for the cycle.
+- `policy_ref`: optional loyalty policy or version reference.
+- `source`, `external_ids`, and `metadata`: provenance handles for the evaluator or imported aggregate.
+
+Current tier snapshot remains in `crm_entities.attributes.profile_packs.fran_loyalty`. Current member sign-up dates come from `crm_entities.attributes.profile_packs.fran_member.member_since` with `crm_entities.created_at` as the fallback.
+
+Points analytics use existing spine data:
+
+- Points issued and redeemed are aggregated from `crm_events` for the requested date range.
+- Current outstanding liability is derived from `crm_entities.attributes.profile_packs.fran_loyalty.points_balance`.
+- Expiry risk is derived from `points_expiring_soon` and `points_expiry_date` inside the requested notification window.
+- Top spender and lifecycle lists are derived from transaction events in `crm_events`, joined to Fran member profile rows by CRM person id.
+- Birthday-member lists use `crm_entities.attributes.profile_packs.fran_member.birthday`, `mobile`, and current `fran_loyalty` tier and points fields.
+- Campaign performance uses campaign identifiers in event `context` or `payload`, plus reach, transaction, points, and revenue payload fields.
+
+The analytics API returns aggregate series plus compact operator export rows. It should not expose unrelated graph rows. Member-level tier changes should still be preserved through source events, facts, execution logs, or future detailed cycle rows when needed. A future `fran_loyalty_ledger` can replace event-derived points flow without changing the dashboard response shape.
+
 ## Customer Memory Foundation
 
 The CRM now has Phase 1 customer-memory tables for cross-repo facts:

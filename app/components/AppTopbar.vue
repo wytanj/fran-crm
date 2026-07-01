@@ -11,6 +11,7 @@ const pageTitle = computed(() => {
   const labels: Record<string, string> = {
     '/': 'Fran CRM',
     '/graph': 'Customer Graph',
+    '/analytics': 'Analytics',
     '/schema': 'Schema Designer',
     '/api-console': 'API Layer',
     '/fran': 'Fran POS Contracts',

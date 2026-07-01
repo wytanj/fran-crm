@@ -11,6 +11,7 @@ Fran CRM owns:
 - Fran profile packs
 - POS-safe counter profile projection
 - loyalty policy versions
+- aggregate loyalty analytics
 - reward catalogue, quote, commit, and reversal decisions
 - customer facts and provenance
 - audit events and execution logs
@@ -36,6 +37,7 @@ Implemented mock routes:
 - `POST /fran/pos/counter-session`
 - `POST /api/fran/pos/member/resolve`
 - `POST /api/fran/pos/counter-session`
+- `GET /api/fran/analytics`
 
 Planned routes:
 
@@ -105,6 +107,12 @@ Output includes:
 - source freshness
 
 The mock response intentionally excludes restricted notes even when the demo CRM profile contains them.
+
+## Analytics Boundary
+
+`GET /api/fran/analytics` is an operator-facing CRM route, not a checkout route. It returns aggregate current tier counts, sign-up trends, tier trend points, evaluation-cycle upgrade/downgrade counts, date-ranged points flow, redemption rate, outstanding points liability, expiry notification exposure, top-spender lists, inactivity lists, birthday-member lists, and campaign performance for one `crm_workspaces.id` boundary. It does not expose unrelated graph rows or member-level movement details.
+
+Current Bronze, Silver, and Gold counts come from the `fran_loyalty` profile pack. New sign-ups use `fran_member.member_since` with entity creation date as fallback. Historical movement is recorded in `fran_loyalty_tier_evaluation_cycles`. Points issued, redeemed, spend, lifecycle, and campaign metrics come from `crm_events`, while liability, birthdays, and current tier context come from Fran profile packs. Export lists must remain compact and operator-scoped.
 
 ## Idempotency Rules
 

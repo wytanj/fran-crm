@@ -97,6 +97,23 @@ Fran default packs are:
 
 Only `pos_visible` fields are allowed in counter-session responses. Restricted fields such as `reported_sensitivity_note`, `advisor_notes`, `birthday`, and `ytd_spend` stay filtered by the backend.
 
+## Fran Loyalty Analytics
+
+Fran CRM keeps current member tier state in the `fran_loyalty` profile pack and records aggregate tier-evaluation history in `fran_loyalty_tier_evaluation_cycles`.
+
+| Field group | Purpose |
+| --- | --- |
+| `cycle_key`, `label`, `evaluated_at` | Identify a loyalty evaluation cycle. |
+| `member_count`, `bronze_count`, `silver_count`, `gold_count` | Store the cycle tier snapshot. |
+| `upgraded_count`, `downgraded_count`, `retained_count` | Store movement counts for that cycle. |
+| `policy_ref`, `source`, `external_ids`, `metadata` | Preserve evaluator and policy provenance. |
+
+The analytics API derives current Bronze, Silver, and Gold counts from `crm_entities.attributes.profile_packs.fran_loyalty.tier`. Sign-up trends use `fran_member.member_since` when present and fall back to the person creation date.
+
+Points analytics are aggregate reads over the same spine. Issued and redeemed points come from `crm_events` in the requested date range. Outstanding liability comes from `fran_loyalty.points_balance` multiplied by the configured minor-currency value per point. Expiry risk uses `fran_loyalty.points_expiring_soon` and `fran_loyalty.points_expiry_date`.
+
+Customer report lists use compact workspace-scoped projections. Top spenders, at-risk customers, lapsed customers, and campaign performance are derived from transaction, loyalty, and campaign events in `crm_events`. Birthday member lists read `fran_member.birthday`, `mobile`, current tier, and points balance from profile packs.
+
 ## Customer Memory Tables
 
 The CRM acts as the customer graph, consent, memory, segments, and semantic-query foundation. It should not own POS execution, product taxonomy, or loyalty economics.

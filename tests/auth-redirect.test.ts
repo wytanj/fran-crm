@@ -14,6 +14,10 @@ describe('auth redirect helpers', () => {
     expect(resolveAuthBaseUrl('http://localhost:3000', 'http://127.0.0.1:3001')).toBe('http://127.0.0.1:3001')
   })
 
+  it('keeps the callback on the active browser origin for PKCE storage', () => {
+    expect(resolveAuthBaseUrl('https://crm.example.com', 'https://preview.example.com')).toBe('https://preview.example.com')
+  })
+
   it('builds the Supabase callback URL with setup as the default next path', () => {
     expect(buildAuthRedirectUrl('https://crm.example.com')).toBe('https://crm.example.com/confirm?next=%2Fsetup')
   })

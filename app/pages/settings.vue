@@ -51,9 +51,10 @@ const envRows = [
 supabase/migrations/0002_customer_memory_foundation.sql
 supabase/migrations/0003_data_api_service_role_grants.sql
 supabase/migrations/0004_profile_field_packs.sql
-supabase/migrations/0005_return_eligibility.sql</pre>
+supabase/migrations/0005_return_eligibility.sql
+supabase/migrations/0006_fran_loyalty_analytics.sql</pre>
         </div>
-        <p class="muted-text">The migrations include workspace membership, graph entities, relationships, custom field definitions, customer memory, profile packs, return eligibility, integration accounts, billing records, proposals, approvals, execution logs, and audit events.</p>
+        <p class="muted-text">The migrations include workspace membership, graph entities, relationships, custom field definitions, customer memory, profile packs, return eligibility, Fran loyalty analytics, integration accounts, billing records, proposals, approvals, execution logs, and audit events.</p>
       </article>
     </section>
   </div>
