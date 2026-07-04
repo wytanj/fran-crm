@@ -39,6 +39,24 @@ The route records the check, returns only counter-safe evidence, and may issue a
 
 Agents and integrations should still require proposals or explicit approval for return-policy changes, manager overrides, identity merges, customer-data exports, and connector fallback changes.
 
+## Staff And Connector Permissions
+
+Claude, Slack, and Teams are chat front doors. Fran CRM still owns data authorization.
+
+Connector requests should resolve in this order:
+
+1. Verify the platform or bearer token.
+2. Resolve the workspace.
+3. Resolve the staff member to a CRM user.
+4. Load role defaults plus capability grants.
+5. Check the required tool capabilities.
+6. Execute a narrow tool.
+7. Write execution and audit records.
+
+The Claude connector setup route records `crm_agent_connector_installs`. External identities map through `crm_staff_identity_links`. Workspace overrides live in `crm_agent_capability_grants`.
+
+The first implemented MCP tool is `fran.analytics.topCustomers`. It requires customer-level analytics permissions and redacts contact fields unless `customer.contact.read` is present.
+
 ## Schema Extension Example
 
 Agents can suggest new fields when imported data reveals useful properties.

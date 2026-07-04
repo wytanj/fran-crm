@@ -1,9 +1,12 @@
 import { z } from 'zod'
+import { agentCapabilityProfiles } from './agent-capabilities'
 
 export const crmValueTypes = ['text', 'number', 'date', 'boolean', 'email', 'phone', 'json', 'enum', 'single_select', 'multi_select', 'tag_list'] as const
 export const paidPlanKeys = ['hosted_growth', 'hosted_scale'] as const
 export const workspaceRoles = ['owner', 'admin', 'member', 'agent'] as const
 export const profileSensitivityLevels = ['public', 'internal', 'confidential', 'restricted'] as const
+export const agentConnectorProviders = ['claude', 'slack', 'teams', 'custom_mcp'] as const
+export const customerPurchaseMetrics = ['purchase_amount', 'purchase_count'] as const
 export const returnEligibilityDecisions = [
   'eligible',
   'exchange_only',
@@ -75,6 +78,25 @@ export const franAnalyticsQuerySchema = workspaceScopedQuerySchema.extend({
   atRiskDays: z.coerce.number().int().min(1).max(365).default(60),
   lapsedFromDays: z.coerce.number().int().min(1).max(730).default(90),
   lapsedToDays: z.coerce.number().int().min(1).max(1095).default(180)
+})
+
+export const franTopCustomersToolInputSchema = z.object({
+  workspaceId: z.string().uuid(),
+  from: optionalAnalyticsDateSchema,
+  to: optionalAnalyticsDateSchema,
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  metric: z.enum(customerPurchaseMetrics).default('purchase_amount'),
+  includeContact: z.coerce.boolean().default(false)
+})
+
+export const agentConnectorSetupPayloadSchema = z.object({
+  workspaceId: z.string().uuid(),
+  provider: z.enum(agentConnectorProviders).default('claude'),
+  connectorName: z.string().trim().min(2).max(80).default('Fran CRM'),
+  externalAccountId: z.string().trim().min(1).max(160).optional(),
+  defaultProfile: z.enum(agentCapabilityProfiles).default('manager'),
+  status: z.enum(['draft', 'configured', 'connected', 'disabled', 'revoked']).default('configured'),
+  config: z.record(z.string(), z.unknown()).default({})
 })
 
 export const workspaceSetupPayloadSchema = z.object({
@@ -160,6 +182,8 @@ export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>
 export type CrmEventPayload = z.infer<typeof crmEventPayloadSchema>
 export type WorkspaceSetupPayload = z.infer<typeof workspaceSetupPayloadSchema>
 export type FranAnalyticsQuery = z.infer<typeof franAnalyticsQuerySchema>
+export type FranTopCustomersToolInput = z.infer<typeof franTopCustomersToolInputSchema>
+export type AgentConnectorSetupPayload = z.infer<typeof agentConnectorSetupPayloadSchema>
 export type ProfilePackInstallPayload = z.infer<typeof profilePackInstallPayloadSchema>
 export type ProfileFieldUpdatePayload = z.infer<typeof profileFieldUpdatePayloadSchema>
 export type ReturnEligibilityPayload = z.infer<typeof returnEligibilityPayloadSchema>

@@ -20,6 +20,20 @@ Users set up a company workspace first. The company maps to `crm_workspaces`, an
 | `ticket` | Support issue, complaint, request, or case. |
 | `campaign` | Segment, communication, or outbound initiative. |
 
+## Staff Identity And Agent Connectors
+
+Fran CRM keeps Claude, Slack, Teams, and future MCP connectors as workspace-scoped entry points rather than direct database clients.
+
+| Table | Purpose |
+| --- | --- |
+| `crm_agent_connector_installs` | Connector install metadata, including provider, connector name, remote MCP URL, status, and default staff profile. |
+| `crm_staff_identity_links` | Mapping between external staff identities and Fran CRM users. |
+| `crm_agent_capability_grants` | Workspace grants or denies for roles, profiles, users, or connector principals. |
+
+Default profiles are `owner`, `admin`, `manager`, `marketing`, `analyst`, `cashier`, and `agent`. Capabilities are explicit strings such as `analytics.customer_list.read`, `customer.purchase.read`, `customer.contact.read`, `agent.connector.manage`, and `agent.tool.execute`.
+
+This lets a Claude Team connector be installed once while each staff member still receives only the Fran CRM capabilities assigned to their CRM account.
+
 ## Minimal Customer Properties
 
 A typical Shopify-style customer gives the CRM enough information to start with:

@@ -44,6 +44,8 @@ Fran loyalty analytics are aggregate reads over the member and tier spine:
 - birthday member lists use the Fran member and loyalty profile packs
 - campaign performance aggregates campaign reach, transaction, points-awarded, and revenue events
 
+Claude/MCP analytics tools use the same source data and authorization boundary. `fran.analytics.topCustomers` ranks customers inside a requested purchase window, returns chart-ready data, records execution and audit rows, and redacts contact fields unless the caller has `customer.contact.read`.
+
 The cycle table stores aggregate totals only: member count, tier counts, upgraded count, downgraded count, retained count, optional policy reference, and provenance metadata. Member-level tier movement should remain in source events, facts, execution logs, or a future detailed cycle-result table when the loyalty evaluator needs drilldown. Exportable operator lists must stay compact and workspace-scoped. A future loyalty ledger can replace event-derived point-flow aggregates without changing the operator dashboard contract.
 
 ## Mutation Rules

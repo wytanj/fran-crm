@@ -13,6 +13,40 @@ The API can run in two modes:
 
 Agents and integrations should always check `mode` before assuming writes persisted to a real workspace.
 
+## GET /api/agents/connectors/claude/setup
+
+Returns the setup metadata Fran CRM owns for a Claude Team custom connector. Supabase-backed calls require `workspaceId`, a bearer token, and `agent.connector.manage`.
+
+The response includes the remote MCP URL, capability profiles, current install record when present, and the setup steps that must happen outside Fran CRM.
+
+## POST /api/agents/connectors/claude/setup
+
+Creates or updates the Claude connector install record for one workspace.
+
+Payload:
+
+```json
+{
+  "workspaceId": "workspace uuid",
+  "provider": "claude",
+  "connectorName": "Fran CRM",
+  "defaultProfile": "manager",
+  "status": "configured"
+}
+```
+
+The route writes `crm_agent_connector_installs` and an `agent.connector.configured` audit event. Claude Team owner approval, OAuth client registration, and production callback approval remain outside this repo.
+
+## GET /api/mcp
+
+Returns a lightweight discovery response for Fran CRM's remote MCP endpoint, including protocol version and tool names.
+
+## POST /api/mcp
+
+Handles JSON-RPC MCP requests. Supported methods are `initialize`, `tools/list`, and `tools/call`.
+
+The first implemented tool is `fran.analytics.topCustomers`, which answers date-ranged customer purchase ranking questions and returns compact rows plus chart-ready bar data. Tool calls require Supabase bearer auth, workspace membership, and every required capability. Contact fields are redacted unless the caller has `customer.contact.read`.
+
 ## POST /api/fran/pos/member/resolve
 
 Mocked Fran POS member lookup. The root alias `POST /fran/pos/member/resolve` exposes the same contract.

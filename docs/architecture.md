@@ -8,6 +8,7 @@ Fran CRM treats customer, member, loyalty, reward, and counter-session data as a
 - `crm_relationships`: typed edges such as `placed_order`, `works_at`, `opened_ticket`, `belongs_to_household`, or custom agent-created edges.
 - `crm_field_definitions`: schema designed by teams, integrations, or agents without hardcoding every vertical into the core.
 - `crm_agent_proposals`, `crm_approvals`, `crm_execution_logs`: the approval loop agents need before touching operational data.
+- `crm_agent_connector_installs`, `crm_staff_identity_links`, `crm_agent_capability_grants`: the connector, staff identity, and capability layer for Claude, Slack, Teams, and future MCP clients.
 
 ## Customer Memory Layer
 
@@ -46,7 +47,7 @@ These packs stay in profile-pack and field-definition tables instead of becoming
 
 ## MCP Direction
 
-Future MCP servers should expose workspace-scoped tools around:
+MCP servers should expose workspace-scoped tools around:
 
 - Search graph entities.
 - Read neighborhood around an entity.
@@ -54,6 +55,7 @@ Future MCP servers should expose workspace-scoped tools around:
 - Stage a merge.
 - Request approval.
 - Execute an approved action.
+- Read governed customer analytics such as `fran.analytics.topCustomers`.
 
 The MCP layer should use the same audit and execution tables as the web app.
 

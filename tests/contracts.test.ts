@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  agentConnectorSetupPayloadSchema,
   checkoutPayloadSchema,
   crmEventPayloadSchema,
   franCounterSessionPayloadSchema,
   franMemberResolvePayloadSchema,
+  franTopCustomersToolInputSchema,
   graphSearchQuerySchema,
   returnEligibilityPayloadSchema,
   schemaFieldPayloadSchema,
@@ -190,6 +192,38 @@ describe('API payload contracts', () => {
     expect(payload).toMatchObject({
       personId: 'person_001',
       store: { id: 'ion-orchard' }
+    })
+  })
+
+  it('accepts the Claude connector setup contract', () => {
+    const payload = agentConnectorSetupPayloadSchema.parse({
+      workspaceId: '11111111-1111-4111-8111-111111111111',
+      provider: 'claude',
+      connectorName: 'Fran CRM',
+      defaultProfile: 'manager'
+    })
+
+    expect(payload).toMatchObject({
+      provider: 'claude',
+      connectorName: 'Fran CRM',
+      defaultProfile: 'manager',
+      status: 'configured'
+    })
+  })
+
+  it('accepts the top customer MCP tool input contract', () => {
+    const payload = franTopCustomersToolInputSchema.parse({
+      workspaceId: '11111111-1111-4111-8111-111111111111',
+      from: '2026-06-30',
+      to: '2026-07-04',
+      limit: 10,
+      metric: 'purchase_amount'
+    })
+
+    expect(payload).toMatchObject({
+      limit: 10,
+      metric: 'purchase_amount',
+      includeContact: false
     })
   })
 })

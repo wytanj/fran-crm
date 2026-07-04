@@ -27,6 +27,8 @@ Return eligibility checks are operational, not graph browsing. They should retur
 
 Fran loyalty analytics reads return aggregate metrics plus compact operator export rows. Agents can use them to answer tier-count, sign-up trend, upgrade/downgrade-cycle, points issued, points redeemed, redemption-rate, liability, expiry-risk, top-spender, inactivity, birthday, and campaign-performance questions without reading full member profiles or unrelated graph rows.
 
+Fran top-customer analytics answers date-ranged purchase-ranking questions through `fran.analytics.topCustomers`. The tool returns ranked rows and chart-ready bar data. It requires `agent.tool.execute`, `analytics.customer_list.read`, and `customer.purchase.read`; contact fields require `customer.contact.read`.
+
 ## Future MCP Shape
 
 The future MCP layer should expose these skills as typed tools over the same API contracts:
@@ -39,5 +41,6 @@ The future MCP layer should expose these skills as typed tools over the same API
 - `crm.execution.runApproved`
 - `crm.returns.checkEligibility`
 - `crm.fran.analytics.read`
+- `fran.analytics.topCustomers`
 
 MCP tools should not bypass workspace boundaries, approvals, or audit logging.

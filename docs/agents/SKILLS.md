@@ -190,6 +190,33 @@ Expected output:
 - campaign reach, transaction, points-awarded, and revenue performance
 - warning when historical cycle storage has not been migrated yet
 
+### Fran Top Customers Analytics
+
+Answer staff questions such as "who are the best 10 customers in the last 5 days and chart their purchases" without exposing arbitrary CRM tables.
+
+Expected inputs:
+
+- `workspace_id`
+- inclusive `from` and `to` dates
+- `limit`
+- ranking metric: `purchase_amount` or `purchase_count`
+- optional `includeContact`
+
+Required capabilities:
+
+- `agent.tool.execute`
+- `analytics.customer_list.read`
+- `customer.purchase.read`
+- `customer.contact.read` only when contact fields are requested
+
+Expected output:
+
+- ranked customer rows with person id, display name, tier, purchase count, spend, and last purchase date
+- contact fields only when permitted
+- chart-ready bar data
+- `crm_execution_logs` entry
+- `crm_audit_events` entry
+
 ## Restricted Skills
 
 These should require explicit capability grants:
@@ -201,7 +228,9 @@ These should require explicit capability grants:
 - Bulk updating many entities.
 - Writing directly to `crm_field_definitions` without a proposal.
 - Creating return policies or issuing manager overrides outside published policy.
+- Reading customer-level purchase analytics without `analytics.customer_list.read` and `customer.purchase.read`.
+- Revealing contact fields through chat/MCP tools without `customer.contact.read`.
 
 ## Future MCP Shape
 
-Future MCP tools should map to these skills with workspace-scoped authorization and should reuse the same API, proposal, approval, execution, and audit tables as the web application. Return eligibility should map to a narrow `crm.returns.checkEligibility` tool rather than a broad customer-graph read.
+Future MCP tools should map to these skills with workspace-scoped authorization and should reuse the same API, proposal, approval, execution, and audit tables as the web application. Return eligibility should map to a narrow `crm.returns.checkEligibility` tool rather than a broad customer-graph read. The first implemented customer analytics tool is `fran.analytics.topCustomers`.

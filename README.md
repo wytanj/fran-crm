@@ -24,6 +24,7 @@ Fran CRM does not own basket mutation, payment execution, tender movement, recei
 - New workspaces install `fran_member`, `fran_loyalty`, and `fran_beauty_profile` packs by default.
 - Mocked POS-facing routes exist for member resolve and counter session.
 - Analytics reads expose aggregate Bronze, Silver, Gold, sign-up, evaluation-cycle movement, points-issued, points-redeemed, liability, expiry-risk, top-spender, inactivity, birthday, and campaign-performance series and compact export rows.
+- Claude/MCP connector groundwork includes workspace-scoped connector install records, staff identity links, capability grants, an `/api/mcp` JSON-RPC tool endpoint, and the first governed tool: `fran.analytics.topCustomers`.
 - Fran contract docs live in `docs/fran-crm-contract.md` and `docs/fran-loyalty-policy.md`.
 
 ## Routes
@@ -35,6 +36,10 @@ Initial Fran POS routes:
 - `POST /api/fran/pos/member/resolve`
 - `POST /api/fran/pos/counter-session`
 - `GET /api/fran/analytics`
+- `GET /api/agents/connectors/claude/setup`
+- `POST /api/agents/connectors/claude/setup`
+- `GET /api/mcp`
+- `POST /api/mcp`
 - `POST /api/v1/events`
 
 The root `/fran/pos/*` routes match the Fran POS contract. The `/api/fran/pos/*` aliases are kept for Nuxt API route conventions and documentation coverage.

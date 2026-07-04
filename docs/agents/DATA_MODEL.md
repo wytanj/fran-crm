@@ -16,6 +16,50 @@ Workspace setup creates `crm_workspaces` first, then inserts the creator as `own
 
 The browser should not rely on direct table access for CRM data yet. Current UI reads and writes through Nuxt API routes using `SUPABASE_DB_URL` or a server-only Supabase key; `0003_data_api_service_role_grants.sql` explicitly grants the service role Data API access for the CRM tables created in earlier migrations.
 
+## Staff Identity, Capabilities, And Agent Connectors
+
+Fran CRM now separates chat/agent connector access from CRM data permission. A Claude Team, Slack workspace, or Teams tenant can install a connector, but every tool call still resolves to one workspace, one human CRM user, and one capability set before it can read customer data.
+
+Tables:
+
+- `crm_agent_connector_installs`: workspace-scoped connector install records for `claude`, `slack`, `teams`, or `custom_mcp`. Stores connector name, remote MCP URL, external account reference, default staff profile, status, and non-secret config metadata.
+- `crm_staff_identity_links`: maps external staff identities, such as Claude, Slack, Teams, or email identities, to Fran CRM users inside a workspace.
+- `crm_agent_capability_grants`: grants or denies capabilities to roles, profiles, users, or connector principals.
+
+Default staff profiles:
+
+- `owner`: all capabilities.
+- `admin`: broad workspace administration without owner-only billing by default.
+- `manager`: customer-level purchase analytics, return checks, manager-review requests, and audited agent tool execution.
+- `marketing`: campaign/customer analytics and export requests, with exports still governed.
+- `analyst`: aggregate analytics and masked customer lists.
+- `cashier`: counter-safe return checks only.
+- `agent`: proposal and approved-tool execution surface, but no independent customer data access.
+
+Current capability keys include:
+
+- `analytics.aggregate.read`
+- `analytics.customer_list.read`
+- `customer.purchase.read`
+- `customer.contact.read`
+- `customer.export.request`
+- `schema.propose`
+- `schema.manage`
+- `identity.merge.propose`
+- `approval.request`
+- `approval.decide`
+- `integration.execute`
+- `integration.manage`
+- `returns.check`
+- `returns.override.request`
+- `billing.manage`
+- `staff.manage`
+- `agent.connector.manage`
+- `agent.tool.execute`
+- `audit.read`
+
+The first Claude/MCP-facing tool uses this model: `fran.analytics.topCustomers` requires `agent.tool.execute`, `analytics.customer_list.read`, and `customer.purchase.read`. It only includes contact fields when the caller also has `customer.contact.read`.
+
 ## Entity Spine
 
 `crm_entities` stores the nodes of the graph:

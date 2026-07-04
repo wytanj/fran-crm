@@ -4,6 +4,98 @@ This file is the agent-facing source of truth for current HTTP API routes. Updat
 
 ## Routes
 
+### `GET /api/agents/connectors/claude/setup`
+
+Returns the Fran-owned setup metadata for the Claude Team custom connector.
+
+Query:
+
+- `workspaceId`: required UUID.
+
+Auth:
+
+- Supabase mode requires `Authorization: Bearer <access_token>`.
+- The signed-in user must have `agent.connector.manage` for the workspace.
+
+Response shape:
+
+- `remoteMcpUrl`: the public MCP endpoint Claude should be configured to call.
+- `capabilityProfiles`: Fran CRM staff profiles and their default capability grants.
+- `install`: current `crm_agent_connector_installs` row when configured.
+- `outsideRepoSteps`: setup tasks that must happen in Claude/admin infrastructure.
+
+Rules:
+
+- This route does not configure Claude directly. Claude Team Owners still add the remote MCP URL in Claude organization connector settings.
+- The route exposes setup metadata only after Fran CRM workspace permission checks pass.
+
+### `POST /api/agents/connectors/claude/setup`
+
+Creates or updates the Fran CRM install record for the Claude connector.
+
+Payload:
+
+```json
+{
+  "workspaceId": "workspace uuid",
+  "provider": "claude",
+  "connectorName": "Fran CRM",
+  "externalAccountId": "optional Claude org or team id",
+  "defaultProfile": "manager",
+  "status": "configured",
+  "config": {}
+}
+```
+
+Auth:
+
+- Supabase mode requires `Authorization: Bearer <access_token>`.
+- The signed-in user must have `agent.connector.manage`.
+
+Rules:
+
+- The route upserts `crm_agent_connector_installs` by `(workspace_id, provider, connector_name)`.
+- The route writes an `agent.connector.configured` audit event.
+- OAuth client registration, Claude Team approval, and production callback approval remain outside this repo.
+
+### `GET /api/mcp`
+
+Returns a lightweight health and discovery response for the remote MCP endpoint.
+
+Response shape:
+
+- `name`: `Fran CRM MCP`.
+- `transport`: `streamable_http`.
+- `protocolVersion`: currently `2025-03-26`.
+- `tools`: available Fran CRM MCP tool names.
+
+### `POST /api/mcp`
+
+Handles JSON-RPC MCP requests for Claude and other MCP clients.
+
+Supported methods:
+
+- `initialize`: returns protocol version, server info, and tool capability support.
+- `tools/list`: returns the available typed tools.
+- `tools/call`: executes a named tool after Supabase auth and Fran CRM capability checks.
+
+Tool:
+
+- `fran.analytics.topCustomers`: returns date-ranged top customer purchase rows and chart-ready bar data.
+
+Auth:
+
+- `tools/list` and `initialize` are safe discovery methods.
+- `tools/call` requires `Authorization: Bearer <access_token>`.
+- The authenticated user must belong to the requested workspace and have every capability required by the tool.
+
+Rules:
+
+- MCP tool calls are never arbitrary SQL.
+- `fran.analytics.topCustomers` requires `agent.tool.execute`, `analytics.customer_list.read`, and `customer.purchase.read`.
+- Contact fields are redacted unless `includeContact` is requested and the caller also has `customer.contact.read`.
+- Successful tool calls write `crm_execution_logs` and `crm_audit_events`.
+
 ### `POST /api/fran/pos/member/resolve`
 
 Mocked Fran POS member lookup. The root alias `POST /fran/pos/member/resolve` exposes the same contract for POS callers.

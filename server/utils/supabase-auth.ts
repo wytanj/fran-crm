@@ -1,7 +1,7 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 
-type WorkspaceRole = 'owner' | 'admin' | 'member' | 'agent'
+export type WorkspaceRole = 'owner' | 'admin' | 'member' | 'agent'
 
 function getBearerToken(event: H3Event) {
   const header = getHeader(event, 'authorization')

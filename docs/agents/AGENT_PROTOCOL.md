@@ -37,6 +37,28 @@ Direct writes should be limited to low-risk draft or staging actions. Use propos
 - Mutating billing state.
 - Any action that affects many records.
 
+## Staff And Connector Permissions
+
+Chat and AI surfaces are entry points, not permission systems. Slack, Teams, or Claude connector access must resolve to a Fran CRM workspace user before any data tool runs.
+
+The server authorization order is:
+
+1. Verify the platform or bearer token.
+2. Resolve the requested `crm_workspaces.id`.
+3. Resolve the human CRM user or approved service principal.
+4. Load role defaults plus `crm_agent_capability_grants`.
+5. Check every capability required by the tool.
+6. Execute the narrow API/tool.
+7. Write `crm_execution_logs` and `crm_audit_events`.
+
+Connector install records live in `crm_agent_connector_installs`. External staff identity mappings live in `crm_staff_identity_links`. Capability overrides live in `crm_agent_capability_grants`.
+
+Claude Team custom connector setup is split intentionally:
+
+- Fran CRM owns the remote MCP URL, setup metadata, tool contracts, permission checks, and audit logs.
+- Claude Team Owners still add the connector in Claude organization settings.
+- Individual staff still authenticate/connect before Claude can act on their behalf, unless a future managed-auth setup is explicitly adopted.
+
 ## Operational Eligibility Checks
 
 Counter-safe eligibility checks can execute directly when they are narrow, workspace-scoped, and backed by an existing published policy. `POST /api/v1/pos/returns/eligibility` is one of these direct operational checks: it evaluates product, customer email, optional purchase hints, and requested action, then records an eligibility check and optional authorization.
@@ -53,7 +75,7 @@ Completed POS return events consume authorizations and update returned-quantity 
 
 ## MCP Direction
 
-Future MCP tools should expose workspace-scoped actions:
+MCP tools should expose workspace-scoped actions:
 
 - Search graph.
 - Read entity neighborhood.
@@ -63,5 +85,7 @@ Future MCP tools should expose workspace-scoped actions:
 - Execute approved action.
 
 MCP tools should use the same proposal, approval, execution, and audit tables as the web app.
+
+The first implemented MCP tool is `fran.analytics.topCustomers`. It answers purchase-ranking questions with compact chart-ready output, requires customer-level analytics permissions, and redacts contact fields without `customer.contact.read`.
 
 Public app reference: `/docs/agents`.
