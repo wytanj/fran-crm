@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Building2, CheckCircle2, UserRound } from '@lucide/vue'
+import { Building2, CheckCircle2, LoaderCircle, UserRound } from '@lucide/vue'
 import type { WorkspaceSetupPayload } from '~/types/crm'
 
 definePageMeta({
@@ -15,6 +15,7 @@ const form = reactive<WorkspaceSetupPayload>({
   plan: 'hosted_growth'
 })
 const created = ref(false)
+const creatingWorkspace = ref(false)
 const googlePending = ref(false)
 const authError = ref('')
 const slugEdited = ref(false)
@@ -25,7 +26,19 @@ const submitLabel = computed(() => {
     return 'Open company workspace'
   }
 
-  return pending.value ? 'Creating workspace' : 'Create company workspace'
+  return creatingWorkspace.value ? 'Creating workspace' : 'Create company workspace'
+})
+const workspaceLoadingTitle = computed(() => creatingWorkspace.value ? 'Creating workspace' : 'Loading workspace access')
+const workspaceLoadingDetail = computed(() => {
+  if (primaryWorkspace.value) {
+    return 'Refreshing workspace membership and owner access.'
+  }
+
+  if (creatingWorkspace.value) {
+    return 'Writing workspace ownership and installing the default Fran CRM surface.'
+  }
+
+  return 'Checking whether your company workspace already exists.'
 })
 
 function normalizeSlug(input: string) {
@@ -125,16 +138,22 @@ async function submitSetup() {
     return
   }
 
-  const workspace = await createWorkspace({
-    companyName: form.companyName,
-    slug: form.slug,
-    plan: form.plan
-  })
+  creatingWorkspace.value = true
 
-  created.value = true
+  try {
+    const workspace = await createWorkspace({
+      companyName: form.companyName,
+      slug: form.slug,
+      plan: form.plan
+    })
 
-  if (workspace.id) {
-    await navigateTo('/graph')
+    created.value = true
+
+    if (workspace.id) {
+      await navigateTo('/graph')
+    }
+  } finally {
+    creatingWorkspace.value = false
   }
 }
 </script>
@@ -162,11 +181,19 @@ async function submitSetup() {
           Current workspace: {{ primaryWorkspace.name }} ({{ primaryWorkspace.role }})
         </div>
 
+        <LoadingPanel
+          v-else-if="pending || creatingWorkspace"
+          :title="workspaceLoadingTitle"
+          :detail="workspaceLoadingDetail"
+          compact
+        />
+
         <div v-if="mustSignIn" class="notice-bar">
           Sign in first so the company can be assigned to your user as owner.
           <div class="setup-auth-actions">
             <button class="primary-button" type="button" :disabled="googlePending || !isConfigured" @click="continueWithGoogle">
-              <UserRound :size="17" />
+              <LoaderCircle v-if="googlePending" class="button-spinner" :size="17" aria-hidden="true" />
+              <UserRound v-else :size="17" />
               <span>{{ googlePending ? 'Opening Google' : 'Continue with Google' }}</span>
             </button>
             <NuxtLink class="secondary-button" to="/login">Use email link</NuxtLink>
@@ -189,8 +216,9 @@ async function submitSetup() {
           </select>
         </label>
 
-        <button class="primary-button" type="submit" :disabled="pending || mustSignIn">
-          <CheckCircle2 :size="17" />
+        <button class="primary-button" type="submit" :disabled="pending || creatingWorkspace || mustSignIn">
+          <LoaderCircle v-if="pending || creatingWorkspace" class="button-spinner" :size="17" aria-hidden="true" />
+          <CheckCircle2 v-else :size="17" />
           <span>{{ submitLabel }}</span>
         </button>
 

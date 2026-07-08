@@ -10,6 +10,7 @@ import {
   GitFork,
   Gift,
   LayoutDashboard,
+  LoaderCircle,
   PlugZap,
   Settings
 } from '@lucide/vue'
@@ -32,7 +33,7 @@ const signedInNavItems = [
   { label: 'Settings', to: '/settings', icon: Settings }
 ]
 
-const { refreshSession, startAuthListener, user } = useCrmAuth()
+const { loading: authLoading, refreshSession, startAuthListener, user } = useCrmAuth()
 const visibleNavItems = computed(() => user.value ? [...navItems, ...signedInNavItems] : navItems)
 
 onMounted(async () => {
@@ -58,6 +59,10 @@ onMounted(async () => {
         <component :is="item.icon" :size="18" />
         <span>{{ item.label }}</span>
       </NuxtLink>
+      <span v-if="authLoading && !user" class="nav-loading" role="status" aria-live="polite" aria-busy="true">
+        <LoaderCircle :size="16" aria-hidden="true" />
+        <span>Checking session</span>
+      </span>
     </nav>
 
     <div class="sidebar-footer">

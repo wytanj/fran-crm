@@ -3,7 +3,7 @@ definePageMeta({
   middleware: 'authenticated-client'
 })
 
-const { data } = await useCrmBootstrap()
+const { data, pending } = await useCrmBootstrap()
 const proposals = computed(() => data.value?.graph.proposals || [])
 
 const capabilities = [
@@ -23,7 +23,12 @@ const capabilities = [
         <h2>Agents can propose, but the CRM keeps approvals, execution logs, and provenance in the core data spine.</h2>
       </div>
     </div>
-    <div class="two-column">
+    <LoadingPanel
+      v-if="pending"
+      title="Loading agent workspace"
+      detail="Fetching proposals and guarded execution context."
+    />
+    <div v-else class="two-column">
       <AgentProposalList :proposals="proposals" />
       <section class="capability-list">
         <div class="section-heading">

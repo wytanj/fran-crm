@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { LogIn, UserRound } from '@lucide/vue'
+import { LoaderCircle, LogIn, UserRound } from '@lucide/vue'
 import { normalizeAuthNextPath } from '~/utils/auth-redirect'
 
 const route = useRoute()
 const email = ref('')
 const sent = ref(false)
 const error = ref('')
+const emailPending = ref(false)
 const googlePending = ref(false)
 const { isConfigured, signInWithGoogle, signInWithOtp } = useCrmAuth()
 const nextPath = computed(() => {
@@ -42,10 +43,13 @@ async function signIn() {
   }
 
   try {
+    emailPending.value = true
     await signInWithOtp(email.value, nextPath.value)
     sent.value = true
   } catch (signInError) {
     error.value = signInError instanceof Error ? signInError.message : 'Unable to send sign-in link.'
+  } finally {
+    emailPending.value = false
   }
 }
 </script>
@@ -56,7 +60,8 @@ async function signIn() {
       <p class="eyebrow">Workspace access</p>
       <h2>Sign in to your CRM workspace</h2>
       <button class="primary-button" type="button" :disabled="googlePending || !isConfigured" @click="continueWithGoogle">
-        <UserRound :size="17" />
+        <LoaderCircle v-if="googlePending" class="button-spinner" :size="17" aria-hidden="true" />
+        <UserRound v-else :size="17" />
         <span>{{ googlePending ? 'Opening Google' : 'Continue with Google' }}</span>
       </button>
       <div class="auth-divider">
@@ -66,9 +71,10 @@ async function signIn() {
         <span>Email</span>
         <input v-model="email" type="email" placeholder="you@company.com" required />
       </label>
-      <button class="primary-button" type="submit">
-        <LogIn :size="17" />
-        <span>Send magic link</span>
+      <button class="primary-button" type="submit" :disabled="emailPending">
+        <LoaderCircle v-if="emailPending" class="button-spinner" :size="17" aria-hidden="true" />
+        <LogIn v-else :size="17" />
+        <span>{{ emailPending ? 'Sending link' : 'Send magic link' }}</span>
       </button>
       <p v-if="sent" class="notice-text">Check your email for the sign-in link. In demo mode this confirms the auth flow shape.</p>
       <p v-if="error" class="form-error">{{ error }}</p>

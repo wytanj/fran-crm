@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, PackagePlus, Plus, Save } from '@lucide/vue'
+import { CheckCircle2, LoaderCircle, PackagePlus, Plus } from '@lucide/vue'
 import type { CrmProfilePackDefinition, CrmSchemaField } from '~/types/crm'
 
 const props = defineProps<{
@@ -88,29 +88,33 @@ async function addField() {
   }
 
   saving.value = true
-  const field = {
-    key: draft.key,
-    label: draft.label,
-    type: draft.type,
-    required: draft.required,
-    origin: 'custom' as const
-  }
 
-  await $fetch('/api/schema/fields', {
-    method: 'POST',
-    body: {
-      workspaceId: props.workspaceId,
-      entityType: 'person',
-      ...field
+  try {
+    const field = {
+      key: draft.key,
+      label: draft.label,
+      type: draft.type,
+      required: draft.required,
+      origin: 'custom' as const
     }
-  })
 
-  localFields.value.unshift(field)
-  draft.key = ''
-  draft.label = ''
-  draft.type = 'text'
-  draft.required = false
-  saving.value = false
+    await $fetch('/api/schema/fields', {
+      method: 'POST',
+      body: {
+        workspaceId: props.workspaceId,
+        entityType: 'person',
+        ...field
+      }
+    })
+
+    localFields.value.unshift(field)
+    draft.key = ''
+    draft.label = ''
+    draft.type = 'text'
+    draft.required = false
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
@@ -138,6 +142,7 @@ async function addField() {
             @click="installPack(pack)"
           >
             <CheckCircle2 v-if="isPackInstalled(pack)" :size="17" />
+            <LoaderCircle v-else-if="installingPackKey === pack.key" class="button-spinner" :size="17" aria-hidden="true" />
             <PackagePlus v-else :size="17" />
             <span>{{ isPackInstalled(pack) ? 'Installed' : installingPackKey === pack.key ? 'Installing' : 'Install' }}</span>
           </button>
@@ -181,7 +186,7 @@ async function addField() {
         <span>Required for new person records</span>
       </label>
       <button class="primary-button" type="submit" :disabled="saving">
-        <Save v-if="saving" :size="17" />
+        <LoaderCircle v-if="saving" class="button-spinner" :size="17" aria-hidden="true" />
         <Plus v-else :size="17" />
         <span>{{ saving ? 'Saving' : 'Add field' }}</span>
       </button>

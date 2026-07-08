@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Building2, GitBranch, KeyRound, LogOut, Search, UserRound } from '@lucide/vue'
+import { Building2, GitBranch, KeyRound, LoaderCircle, LogOut, Search, UserRound } from '@lucide/vue'
 
 const route = useRoute()
 const runtime = useRuntimeConfig()
 const query = ref('')
-const { isConfigured, refreshSession, signOut, startAuthListener, user } = useCrmAuth()
-const { loadWorkspaces, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
+const { isConfigured, loading: authLoading, refreshSession, signOut, startAuthListener, user } = useCrmAuth()
+const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
 
 const pageTitle = computed(() => {
   const labels: Record<string, string> = {
@@ -68,16 +68,22 @@ async function handleSignOut() {
         class="workspace-button"
         :to="requiresSetup ? '/setup' : '/settings'"
         :title="requiresSetup ? 'Set up company' : 'Workspace settings'"
+        :aria-busy="workspacePending"
       >
-        <Building2 :size="18" />
+        <LoaderCircle v-if="workspacePending" class="button-spinner" :size="18" aria-hidden="true" />
+        <Building2 v-else :size="18" />
         <span>
-          <strong>{{ primaryWorkspace?.name || 'Setup company' }}</strong>
-          <small>{{ primaryWorkspace?.role || 'owner' }}</small>
+          <strong>{{ workspacePending ? 'Loading workspace' : primaryWorkspace?.name || 'Setup company' }}</strong>
+          <small>{{ workspacePending ? 'Please wait' : primaryWorkspace?.role || 'owner' }}</small>
         </span>
       </NuxtLink>
       <button v-if="user" class="icon-button" type="button" title="Sign out" @click="handleSignOut">
         <LogOut :size="18" />
       </button>
+      <span v-else-if="authLoading" class="user-button" role="status" aria-live="polite" aria-busy="true">
+        <LoaderCircle class="button-spinner" :size="18" aria-hidden="true" />
+        <span>Checking session</span>
+      </span>
       <NuxtLink v-else-if="isConfigured" class="user-button" to="/login">
         <UserRound :size="18" />
         <span>Sign in</span>

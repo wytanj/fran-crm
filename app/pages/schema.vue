@@ -6,7 +6,7 @@ definePageMeta({
 const { refreshSession, startAuthListener, user } = useCrmAuth()
 const { loadWorkspaces, primaryWorkspace } = useCrmWorkspaceAccess()
 const workspaceId = computed(() => primaryWorkspace.value?.id)
-const { data, refresh } = await useCrmBootstrap(workspaceId)
+const { data, pending, refresh } = await useCrmBootstrap(workspaceId)
 const fields = computed(() => data.value?.graph.customerFields || [])
 const profilePacks = computed(() => data.value?.graph.profilePacks || [])
 
@@ -30,7 +30,13 @@ onMounted(async () => {
       </div>
       <NuxtLink class="secondary-button" to="/api-console">View API</NuxtLink>
     </div>
+    <LoadingPanel
+      v-if="pending"
+      title="Loading schema"
+      detail="Fetching field definitions and installable profile packs."
+    />
     <SchemaDesigner
+      v-else
       :fields="fields"
       :profile-packs="profilePacks"
       :workspace-id="workspaceId"

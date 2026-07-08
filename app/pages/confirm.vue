@@ -4,6 +4,7 @@ import { normalizeAuthNextPath } from '~/utils/auth-redirect'
 const route = useRoute()
 const status = ref('Checking your session...')
 const error = ref('')
+const confirming = ref(true)
 const { getClient, isConfigured, refreshSession, startAuthListener } = useCrmAuth()
 const { loadWorkspaces } = useCrmWorkspaceAccess()
 
@@ -26,6 +27,7 @@ function resolveConfirmErrorMessage(confirmError: unknown) {
 onMounted(async () => {
   if (!isConfigured.value) {
     status.value = 'Demo mode is active.'
+    confirming.value = false
     return
   }
 
@@ -46,6 +48,7 @@ onMounted(async () => {
 
     if (!activeSession) {
       status.value = 'No active session was found.'
+      confirming.value = false
       return
     }
 
@@ -54,13 +57,19 @@ onMounted(async () => {
   } catch (confirmError) {
     error.value = resolveConfirmErrorMessage(confirmError)
     status.value = 'Sign-in confirmation failed.'
+    confirming.value = false
   }
 })
 </script>
 
 <template>
   <div class="auth-page">
-    <section class="auth-panel">
+    <LoadingPanel
+      v-if="confirming"
+      title="Checking your session"
+      detail="Confirming sign-in and loading workspace access."
+    />
+    <section v-else class="auth-panel">
       <p class="eyebrow">Auth confirmed</p>
       <h2>{{ status }}</h2>
       <p v-if="error" class="form-error">{{ error }}</p>

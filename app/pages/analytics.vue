@@ -311,7 +311,11 @@ function formatIsoDate(date: Date) {
       <Activity :size="24" />
     </div>
 
-    <div v-if="pending" class="loading-panel">Loading analytics...</div>
+    <LoadingPanel
+      v-if="pending"
+      title="Loading analytics"
+      detail="Fetching Fran loyalty metrics, customer lists, and trend reports."
+    />
 
     <template v-else-if="analytics">
       <div v-if="requiresSetup" class="notice-bar">

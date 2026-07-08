@@ -23,7 +23,11 @@ onMounted(async () => {
 
 <template>
   <div class="page-stack">
-    <div v-if="pending" class="loading-panel">Loading CRM graph...</div>
+    <LoadingPanel
+      v-if="pending"
+      title="Loading CRM graph"
+      detail="Fetching workspace entities, relationships, proposals, and integrations."
+    />
     <template v-else-if="graph">
       <div v-if="requiresSetup" class="notice-bar">
         Create your company workspace before loading hosted CRM data.

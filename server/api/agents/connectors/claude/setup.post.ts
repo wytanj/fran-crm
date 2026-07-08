@@ -80,6 +80,8 @@ async function upsertClaudeInstall(
         returning id::text, provider, connector_name, external_account_id, remote_mcp_url, default_profile, status, config, created_at::text, updated_at::text
       `
 
+      const installId = typeof rows[0]?.id === 'string' ? rows[0].id : null
+
       await tx`
         insert into public.crm_audit_events (workspace_id, actor_id, event_type, subject_type, subject_id, metadata)
         values (
@@ -87,7 +89,7 @@ async function upsertClaudeInstall(
           ${userId}::uuid,
           'agent.connector.configured',
           'agent_connector',
-          ${rows[0]?.id || null}::uuid,
+          ${installId}::uuid,
           ${JSON.stringify({ provider: 'claude', remoteMcpUrl, defaultProfile: body.defaultProfile })}::jsonb
         )
       `
