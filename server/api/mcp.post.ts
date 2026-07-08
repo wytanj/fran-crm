@@ -91,7 +91,6 @@ export default defineEventHandler(async (event) => {
       } catch (error) {
         await tryCompleteMcpRequestLog(supabase, requestLogId, {
           status: mcpRequestStatusForError(error),
-          workspaceId: parsedWorkspaceId,
           actorId,
           error: buildMcpErrorSummary(error)
         })
