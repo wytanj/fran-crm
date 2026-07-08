@@ -2,7 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type McpRequestLogStatus = 'received' | 'succeeded' | 'failed' | 'rejected'
 
-type JsonRecord = Record<string, unknown>
+type JsonValue = null | string | number | boolean | JsonValue[] | JsonRecord
+type JsonRecord = {
+  [key: string]: JsonValue | undefined
+}
 
 type McpRequestLogStart = {
   method: string
@@ -58,8 +61,8 @@ export function summarizeMcpToolResult(toolName: string, result: unknown): JsonR
 
   return {
     toolName,
-    mode: record.mode,
-    dateRange: record.dateRange,
+    mode: sanitizeForMcpLog(record.mode),
+    dateRange: sanitizeForMcpLog(record.dateRange),
     rowCount: topCustomers?.length,
     keys: Object.keys(record)
   }
@@ -79,7 +82,7 @@ export function buildMcpErrorSummary(error: unknown): JsonRecord {
   }
 
   if (error && typeof error === 'object') {
-    const record = error as JsonRecord
+    const record = error as Record<string, unknown>
 
     return {
       message: typeof record.statusMessage === 'string' ? record.statusMessage : 'MCP tool call failed.',
@@ -130,7 +133,7 @@ export async function recordMcpRequestLog(supabase: SupabaseClient | null | unde
         ${row.method},
         ${row.tool_name},
         ${row.status},
-        ${JSON.stringify(row.request)}::jsonb,
+        ${sql.json(row.request)},
         '{}'::jsonb,
         '{}'::jsonb
       )
@@ -182,8 +185,8 @@ export async function completeMcpRequestLog(
         workspace_id = coalesce(${row.workspace_id}::uuid, workspace_id),
         actor_id = coalesce(${row.actor_id}::uuid, actor_id),
         status = ${row.status},
-        response_summary = ${JSON.stringify(row.response_summary)}::jsonb,
-        error = ${JSON.stringify(row.error)}::jsonb,
+        response_summary = ${sql.json(row.response_summary)},
+        error = ${sql.json(row.error)},
         completed_at = now()
       where id = ${id}::uuid
     `
@@ -212,17 +215,29 @@ export async function completeMcpRequestLog(
   }
 }
 
-function sanitizeForMcpLog(value: unknown, depth = 0): unknown {
+function sanitizeForMcpLog(value: unknown, depth = 0): JsonValue {
   if (depth > 6) {
     return '[depth_limit]'
+  }
+
+  if (value === undefined || typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint') {
+    return null
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString()
   }
 
   if (Array.isArray(value)) {
     return value.map((item) => sanitizeForMcpLog(item, depth + 1))
   }
 
-  if (!value || typeof value !== 'object') {
+  if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return value
+  }
+
+  if (typeof value !== 'object') {
+    return null
   }
 
   return Object.entries(value as JsonRecord).reduce<JsonRecord>((acc, [key, item]) => {
