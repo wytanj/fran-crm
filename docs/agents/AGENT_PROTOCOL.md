@@ -43,13 +43,14 @@ Chat and AI surfaces are entry points, not permission systems. Slack, Teams, or 
 
 The server authorization order is:
 
-1. Verify the platform or bearer token.
-2. Resolve the requested `crm_workspaces.id`.
-3. Resolve the human CRM user or approved service principal.
-4. Load role defaults plus `crm_agent_capability_grants`.
-5. Check every capability required by the tool.
-6. Execute the narrow API/tool.
-7. Write `crm_execution_logs` and `crm_audit_events`.
+1. Record the incoming MCP `tools/call` request in `crm_mcp_request_logs` with sanitized arguments and any parseable workspace.
+2. Verify the platform or bearer token.
+3. Resolve the requested `crm_workspaces.id`.
+4. Resolve the human CRM user or approved service principal.
+5. Load role defaults plus `crm_agent_capability_grants`.
+6. Check every capability required by the tool.
+7. Execute the narrow API/tool.
+8. Update the MCP request log with final status, then write `crm_execution_logs` and `crm_audit_events` for successful executions.
 
 Connector install records live in `crm_agent_connector_installs`. External staff identity mappings live in `crm_staff_identity_links`. Capability overrides live in `crm_agent_capability_grants`.
 
@@ -84,7 +85,7 @@ MCP tools should expose workspace-scoped actions:
 - Request approval.
 - Execute approved action.
 
-MCP tools should use the same proposal, approval, execution, and audit tables as the web app.
+MCP tools should use the same proposal, approval, execution, request-log, and audit tables as the web app.
 
 The first implemented MCP tool is `fran.analytics.topCustomers`. It answers purchase-ranking questions with compact chart-ready output, requires customer-level analytics permissions, and redacts contact fields without `customer.contact.read`.
 

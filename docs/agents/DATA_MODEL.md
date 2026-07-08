@@ -25,6 +25,7 @@ Tables:
 - `crm_agent_connector_installs`: workspace-scoped connector install records for `claude`, `slack`, `teams`, or `custom_mcp`. Stores connector name, remote MCP URL, external account reference, default staff profile, status, and non-secret config metadata.
 - `crm_staff_identity_links`: maps external staff identities, such as Claude, Slack, Teams, or email identities, to Fran CRM users inside a workspace.
 - `crm_agent_capability_grants`: grants or denies capabilities to roles, profiles, users, or connector principals.
+- `crm_mcp_request_logs`: records each MCP `tools/call` request before execution, including method, tool, sanitized arguments, actor when known, workspace when parseable, status, response summary, and sanitized error details.
 
 Default staff profiles:
 
@@ -59,6 +60,8 @@ Current capability keys include:
 - `audit.read`
 
 The first Claude/MCP-facing tool uses this model: `fran.analytics.topCustomers` requires `agent.tool.execute`, `analytics.customer_list.read`, and `customer.purchase.read`. It only includes contact fields when the caller also has `customer.contact.read`.
+
+`crm_mcp_request_logs` is the request ledger for future staff questions. Successful tools still write `crm_execution_logs` and `crm_audit_events`, but the request log also captures rejected or failed requests that never reach execution.
 
 ## Entity Spine
 

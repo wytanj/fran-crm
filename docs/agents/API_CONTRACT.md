@@ -92,6 +92,7 @@ Auth:
 Rules:
 
 - MCP tool calls are never arbitrary SQL.
+- Every `tools/call` request writes a `crm_mcp_request_logs` row with the requested method, tool name, sanitized arguments, actor when known, workspace when parseable, status, response summary, and sanitized error details. This starts before auth and capability checks so rejected and failed tool calls are represented.
 - `fran.analytics.topCustomers` requires `agent.tool.execute`, `analytics.customer_list.read`, and `customer.purchase.read`.
 - Contact fields are redacted unless `includeContact` is requested and the caller also has `customer.contact.read`.
 - Successful tool calls write `crm_execution_logs` and `crm_audit_events`.

@@ -1,4 +1,13 @@
 import { callFranAgentTool, listMcpTools } from '../utils/fran-agent-tools'
+import {
+  buildMcpErrorSummary,
+  buildMcpToolRequestLog,
+  completeMcpRequestLog,
+  extractMcpWorkspaceId,
+  mcpRequestStatusForError,
+  recordMcpRequestLog,
+  summarizeMcpToolResult
+} from '../utils/mcp-request-logs'
 
 type JsonRpcRequest = {
   jsonrpc?: string
@@ -45,23 +54,51 @@ export default defineEventHandler(async (event) => {
       const name = typeof params.name === 'string' ? params.name : ''
       const args = params.arguments || {}
       const supabase = useSupabaseAdmin()
-
-      if (!supabase && !useCrmPostgres()) {
-        throw createError({ statusCode: 503, statusMessage: 'Supabase is not configured for MCP tool calls.' })
-      }
-
-      const { supabase: authClient, user } = await requireSupabaseUser(event, supabase || undefined)
-      const result = await callFranAgentTool(authClient, user, name, args)
-
-      return jsonRpcResult(body.id ?? null, {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2)
-          }
-        ],
-        structuredContent: result
+      const parsedWorkspaceId = extractMcpWorkspaceId(args)
+      let actorId: string | undefined
+      const requestLogId = await recordMcpRequestLog(supabase, {
+        method: body.method,
+        toolName: name || undefined,
+        workspaceId: parsedWorkspaceId,
+        provider: 'mcp',
+        clientName: getHeader(event, 'user-agent') || undefined,
+        request: buildMcpToolRequestLog(body.id, body.method, name, args)
       })
+
+      try {
+        if (!supabase && !useCrmPostgres()) {
+          throw createError({ statusCode: 503, statusMessage: 'Supabase is not configured for MCP tool calls.' })
+        }
+
+        const { supabase: authClient, user } = await requireSupabaseUser(event, supabase || undefined)
+        actorId = user.id
+        const result = await callFranAgentTool(authClient, user, name, args)
+        await tryCompleteMcpRequestLog(supabase, requestLogId, {
+          status: 'succeeded',
+          workspaceId: parsedWorkspaceId,
+          actorId,
+          responseSummary: summarizeMcpToolResult(name, result)
+        })
+
+        return jsonRpcResult(body.id ?? null, {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2)
+            }
+          ],
+          structuredContent: result
+        })
+      } catch (error) {
+        await tryCompleteMcpRequestLog(supabase, requestLogId, {
+          status: mcpRequestStatusForError(error),
+          workspaceId: parsedWorkspaceId,
+          actorId,
+          error: buildMcpErrorSummary(error)
+        })
+
+        throw error
+      }
     }
 
     if (body.method.startsWith('notifications/')) {
@@ -90,6 +127,14 @@ function jsonRpcError(id: JsonRpcRequest['id'], code: number, message: string) {
       code,
       message
     }
+  }
+}
+
+async function tryCompleteMcpRequestLog(...args: Parameters<typeof completeMcpRequestLog>) {
+  try {
+    await completeMcpRequestLog(...args)
+  } catch (error) {
+    console.error('[mcp] Failed to complete request log', error)
   }
 }
 

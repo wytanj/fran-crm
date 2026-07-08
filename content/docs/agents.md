@@ -45,13 +45,14 @@ Claude, Slack, and Teams are chat front doors. Fran CRM still owns data authoriz
 
 Connector requests should resolve in this order:
 
-1. Verify the platform or bearer token.
-2. Resolve the workspace.
-3. Resolve the staff member to a CRM user.
-4. Load role defaults plus capability grants.
-5. Check the required tool capabilities.
-6. Execute a narrow tool.
-7. Write execution and audit records.
+1. Record the MCP `tools/call` request in `crm_mcp_request_logs`.
+2. Verify the platform or bearer token.
+3. Resolve the workspace.
+4. Resolve the staff member to a CRM user.
+5. Load role defaults plus capability grants.
+6. Check the required tool capabilities.
+7. Execute a narrow tool.
+8. Write execution and audit records for successful execution, and complete the request log for every final status.
 
 The Claude connector setup route records `crm_agent_connector_installs`. External identities map through `crm_staff_identity_links`. Workspace overrides live in `crm_agent_capability_grants`.
 
@@ -83,3 +84,5 @@ Each executed action should include:
 - before and after values when applicable
 - source proposal and approval identifiers
 - execution status and error payload when failed
+
+Each MCP `tools/call` should also preserve the user's request shape: method, tool name, sanitized arguments, actor when known, workspace when parseable, status, response summary, and sanitized error details.

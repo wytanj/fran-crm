@@ -47,6 +47,8 @@ Handles JSON-RPC MCP requests. Supported methods are `initialize`, `tools/list`,
 
 The first implemented tool is `fran.analytics.topCustomers`, which answers date-ranged customer purchase ranking questions and returns compact rows plus chart-ready bar data. Tool calls require Supabase bearer auth, workspace membership, and every required capability. Contact fields are redacted unless the caller has `customer.contact.read`.
 
+Every `tools/call` request writes `crm_mcp_request_logs` before auth and capability checks, then updates that row with final status, compact response summary, or sanitized error details. Successful tool executions also write `crm_execution_logs` and `crm_audit_events`.
+
 ## POST /api/fran/pos/member/resolve
 
 Mocked Fran POS member lookup. The root alias `POST /fran/pos/member/resolve` exposes the same contract.

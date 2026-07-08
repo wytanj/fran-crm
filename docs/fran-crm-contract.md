@@ -114,7 +114,7 @@ The mock response intentionally excludes restricted notes even when the demo CRM
 
 Current Bronze, Silver, and Gold counts come from the `fran_loyalty` profile pack. New sign-ups use `fran_member.member_since` with entity creation date as fallback. Historical movement is recorded in `fran_loyalty_tier_evaluation_cycles`. Points issued, redeemed, spend, lifecycle, and campaign metrics come from `crm_events`, while liability, birthdays, and current tier context come from Fran profile packs. Export lists must remain compact and operator-scoped.
 
-Claude/MCP staff questions use the same boundary. `fran.analytics.topCustomers` can answer date-ranged purchase-ranking questions and return chart-ready data, but it still requires customer-level analytics capabilities and redacts contact fields without `customer.contact.read`.
+Claude/MCP staff questions use the same boundary. `fran.analytics.topCustomers` can answer date-ranged purchase-ranking questions and return chart-ready data, but it still requires customer-level analytics capabilities and redacts contact fields without `customer.contact.read`. MCP `tools/call` requests are logged in `crm_mcp_request_logs` before execution so rejected, failed, and successful staff questions remain auditable.
 
 ## Idempotency Rules
 
