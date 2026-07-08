@@ -59,7 +59,6 @@ export default defineEventHandler(async (event) => {
       const requestLogId = await recordMcpRequestLog(supabase, {
         method: body.method,
         toolName: name || undefined,
-        workspaceId: parsedWorkspaceId,
         provider: 'mcp',
         clientName: getHeader(event, 'user-agent') || undefined,
         request: buildMcpToolRequestLog(body.id, body.method, name, args)

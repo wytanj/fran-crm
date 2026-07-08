@@ -29,7 +29,7 @@ Fran CRM keeps Claude, Slack, Teams, and future MCP connectors as workspace-scop
 | `crm_agent_connector_installs` | Connector install metadata, including provider, connector name, remote MCP URL, status, and default staff profile. |
 | `crm_staff_identity_links` | Mapping between external staff identities and Fran CRM users. |
 | `crm_agent_capability_grants` | Workspace grants or denies for roles, profiles, users, or connector principals. |
-| `crm_mcp_request_logs` | MCP `tools/call` request ledger with method, tool, sanitized arguments, actor when known, workspace when parseable, final status, response summary, and error details. |
+| `crm_mcp_request_logs` | MCP `tools/call` request ledger with method, tool, sanitized arguments, actor when known, relational workspace when safely attachable, final status, response summary, and error details. |
 
 Default profiles are `owner`, `admin`, `manager`, `marketing`, `analyst`, `cashier`, and `agent`. Capabilities are explicit strings such as `analytics.customer_list.read`, `customer.purchase.read`, `customer.contact.read`, `agent.connector.manage`, and `agent.tool.execute`.
 

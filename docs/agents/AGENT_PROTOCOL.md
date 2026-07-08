@@ -43,7 +43,7 @@ Chat and AI surfaces are entry points, not permission systems. Slack, Teams, or 
 
 The server authorization order is:
 
-1. Record the incoming MCP `tools/call` request in `crm_mcp_request_logs` with sanitized arguments and any parseable workspace.
+1. Record the incoming MCP `tools/call` request in `crm_mcp_request_logs` with sanitized arguments and the raw requested workspace inside those arguments.
 2. Verify the platform or bearer token.
 3. Resolve the requested `crm_workspaces.id`.
 4. Resolve the human CRM user or approved service principal.

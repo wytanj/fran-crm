@@ -85,4 +85,4 @@ Each executed action should include:
 - source proposal and approval identifiers
 - execution status and error payload when failed
 
-Each MCP `tools/call` should also preserve the user's request shape: method, tool name, sanitized arguments, actor when known, workspace when parseable, status, response summary, and sanitized error details.
+Each MCP `tools/call` should also preserve the user's request shape: method, tool name, sanitized arguments, actor when known, relational workspace when safely attachable, status, response summary, and sanitized error details.

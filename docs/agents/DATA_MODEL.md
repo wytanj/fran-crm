@@ -25,7 +25,7 @@ Tables:
 - `crm_agent_connector_installs`: workspace-scoped connector install records for `claude`, `slack`, `teams`, or `custom_mcp`. Stores connector name, remote MCP URL, external account reference, default staff profile, status, and non-secret config metadata.
 - `crm_staff_identity_links`: maps external staff identities, such as Claude, Slack, Teams, or email identities, to Fran CRM users inside a workspace.
 - `crm_agent_capability_grants`: grants or denies capabilities to roles, profiles, users, or connector principals.
-- `crm_mcp_request_logs`: records each MCP `tools/call` request before execution, including method, tool, sanitized arguments, actor when known, workspace when parseable, status, response summary, and sanitized error details.
+- `crm_mcp_request_logs`: records each MCP `tools/call` request before execution, including method, tool, sanitized arguments, actor when known, relational workspace when safely attachable, status, response summary, and sanitized error details.
 
 Default staff profiles:
 
