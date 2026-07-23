@@ -117,6 +117,64 @@ Response fields:
 
 Current snapshot is read from `crm_entities.attributes.profile_packs`. Sign-up date uses `fran_member.member_since` with entity creation date as fallback. Historical movement uses `fran_loyalty_tier_evaluation_cycles` after the analytics migration is applied. Points, spend, lifecycle, and campaign metrics are derived from `crm_events`, while current liability, birthdays, and tier fields come from Fran profile packs.
 
+## GET /api/fran/loyalty/policy-versions
+
+Lists policy versions for a workspace/program. Supabase-backed reads require `workspaceId`, a bearer token, and workspace membership.
+
+Query parameters:
+
+- `workspaceId`
+- `programKey`, defaulting to `fran_with_benefits`
+- `status`, optional `draft`, `testing`, `approved`, `active`, or `retired`
+- `includeRetired`, defaulting to `false`
+- `limit`, defaulting to `20`
+
+The response includes `program` and `policyVersions`.
+
+## POST /api/fran/loyalty/policy-versions
+
+Creates a draft, testing, or approved policy version. Supabase-backed writes require `owner` or `admin`.
+
+Payload includes `workspaceId`, `programKey`, `programName`, `versionKey`, `versionLabel`, optional effective dates, source refs, and `rules`.
+
+The `rules.execution` contract keeps policy ownership in Fran CRM, execution in Fran POS, and pricing/inventory authority in Fran SKUMS.
+
+## GET /api/fran/loyalty/policy-versions/active
+
+Returns the policy bundle Fran POS should execute.
+
+Query parameters:
+
+- `workspaceId`
+- `programKey`
+- optional `storeId`, `registerId`, `personId`, `cohort`
+- optional `at` datetime for effective-window testing
+
+The route resolves active assignments first, then falls back to the active default policy. Response includes `program`, `policyVersion`, optional `assignment`, and `posContract`.
+
+## POST /api/fran/loyalty/policy-versions/[version_id]/publish
+
+Publishes one policy version as the active default for its program. Supabase-backed writes require `owner` or `admin`.
+
+Payload:
+
+```json
+{
+  "workspaceId": "workspace uuid",
+  "effectiveFrom": "2026-07-08T00:00:00.000Z",
+  "changeNote": "Seasonal earn change",
+  "createDefaultAssignment": true
+}
+```
+
+Publishing retires the previous active default version for that program and can upsert the workspace-default assignment.
+
+## POST /api/fran/loyalty/assignments
+
+Creates or updates a policy rollout assignment. Supabase-backed writes require `owner` or `admin`.
+
+Assignment types are `workspace_default`, `store`, `register`, `member`, `cohort`, and `experiment`. Fran POS uses these assignments to test seasonal or experimental policies without checkout code changes.
+
 ## POST /api/v1/events
 
 Accepts idempotent source-system facts from POS, loyalty, ecommerce, partner channels, or future integration workers.

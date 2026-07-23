@@ -4,6 +4,8 @@ import {
   checkoutPayloadSchema,
   crmEventPayloadSchema,
   franCounterSessionPayloadSchema,
+  franLoyaltyPolicyAssignmentPayloadSchema,
+  franLoyaltyPolicyVersionPayloadSchema,
   franMemberResolvePayloadSchema,
   franTopCustomersToolInputSchema,
   graphSearchQuerySchema,
@@ -192,6 +194,58 @@ describe('API payload contracts', () => {
     expect(payload).toMatchObject({
       personId: 'person_001',
       store: { id: 'ion-orchard' }
+    })
+  })
+
+  it('accepts a versioned Fran loyalty policy payload', () => {
+    const payload = franLoyaltyPolicyVersionPayloadSchema.parse({
+      workspaceId: '11111111-1111-4111-8111-111111111111',
+      versionKey: 'v2.1-seasonal-a',
+      versionLabel: 'Fran loyalty v2.1 seasonal A',
+      rules: {
+        schemaVersion: 1,
+        tiers: [
+          {
+            key: 'tier_1',
+            label: 'Tier 1',
+            rank: 1,
+            spendThresholdMinor: 0,
+            earnMultiplier: 1
+          },
+          {
+            key: 'tier_2',
+            label: 'Tier 2',
+            rank: 2,
+            spendThresholdMinor: 50000,
+            earnMultiplier: 1.25
+          }
+        ]
+      }
+    })
+
+    expect(payload.programKey).toBe('fran_with_benefits')
+    expect(payload.rules.execution).toMatchObject({
+      executor: 'fran-pos',
+      pricingAuthority: 'fran-skums',
+      inventoryAuthority: 'fran-skums'
+    })
+    expect(payload.status).toBe('draft')
+  })
+
+  it('accepts a Fran loyalty rollout assignment payload', () => {
+    const payload = franLoyaltyPolicyAssignmentPayloadSchema.parse({
+      workspaceId: '11111111-1111-4111-8111-111111111111',
+      policyVersionId: '22222222-2222-4222-8222-222222222222',
+      assignmentKey: 'ion-orchard:seasonal-a',
+      assignmentType: 'store',
+      targetRef: 'ion-orchard'
+    })
+
+    expect(payload).toMatchObject({
+      programKey: 'fran_with_benefits',
+      priority: 100,
+      allocationPercent: 100,
+      status: 'active'
     })
   })
 

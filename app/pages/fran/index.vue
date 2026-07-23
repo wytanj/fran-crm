@@ -22,9 +22,34 @@ const posRoutes = [
     purpose: 'Read aggregate tier mix, sign-up trends, and evaluation-cycle movement for one workspace.'
   },
   {
+    method: 'GET',
+    path: '/api/fran/loyalty/policy-versions/active',
+    purpose: 'Load the assigned policy bundle Fran POS should execute against a SKUMS basket quote.'
+  },
+  {
+    method: 'GET',
+    path: '/api/fran/loyalty/policy-versions',
+    purpose: 'List draft, testing, approved, active, and retired policy versions for operators.'
+  },
+  {
+    method: 'POST',
+    path: '/api/fran/loyalty/policy-versions',
+    purpose: 'Create a draft, testing, or approved loyalty policy version.'
+  },
+  {
+    method: 'POST',
+    path: '/api/fran/loyalty/policy-versions/[version_id]/publish',
+    purpose: 'Publish a policy version as the active default for its program.'
+  },
+  {
+    method: 'POST',
+    path: '/api/fran/loyalty/assignments',
+    purpose: 'Assign policy versions to a workspace default, store, register, member, cohort, or experiment.'
+  },
+  {
     method: 'POST',
     path: '/fran/pos/basket/preview',
-    purpose: 'Planned evaluator for projected earn, tier progress, and reward eligibility without mutating points.'
+    purpose: 'Compatibility placeholder; final POS evaluation should run locally from policy bundle plus SKUMS quote.'
   },
   {
     method: 'POST',
@@ -46,8 +71,8 @@ const posRoutes = [
 const guardrails = [
   { icon: ScanLine, label: 'POS reads compact decision routes, not raw graph tables.' },
   { icon: ShieldCheck, label: 'Restricted fields stay filtered by backend projection logic.' },
-  { icon: RefreshCcw, label: 'Preview never mutates points; commit and reverse are idempotent.' },
-  { icon: BadgeCheck, label: 'Published loyalty policies decide tier progress and reward eligibility.' },
+  { icon: RefreshCcw, label: 'Policy loading never mutates points; ledger commit and reverse are idempotent.' },
+  { icon: BadgeCheck, label: 'Fran POS executes assigned policy versions against SKUMS price and inventory truth.' },
   { icon: BarChart3, label: 'Analytics stay aggregate and workspace-scoped.' }
 ]
 </script>

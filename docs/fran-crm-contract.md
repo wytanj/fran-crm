@@ -11,13 +11,17 @@ Fran CRM owns:
 - Fran profile packs
 - POS-safe counter profile projection
 - loyalty policy versions
+- policy-version assignment for default, seasonal, store, register, member, cohort, and experiment rollout
+- loyalty account snapshots and ledger settlement
 - aggregate loyalty analytics
-- reward catalogue, quote, commit, and reversal decisions
+- reward audit, reversal, and reconciliation
 - customer facts and provenance
 - audit events and execution logs
 - agent proposals for sensitive or ambiguous changes
 
 Fran POS owns basket mutation, payment execution, tender movement, receipt rendering, register sessions, and the checkout UI.
+
+Fran POS executes the assigned loyalty policy during checkout. Fran SKUMS owns canonical product identity, basket pricing, quote revisions, stock availability, and inventory reservations. CRM policy responses must therefore describe what POS should execute, not calculate final basket pricing from POS display state.
 
 ## Default Profile Packs
 
@@ -38,13 +42,40 @@ Implemented mock routes:
 - `POST /api/fran/pos/member/resolve`
 - `POST /api/fran/pos/counter-session`
 - `GET /api/fran/analytics`
+- `GET /api/fran/loyalty/policy-versions`
+- `POST /api/fran/loyalty/policy-versions`
+- `GET /api/fran/loyalty/policy-versions/active`
+- `POST /api/fran/loyalty/policy-versions/[version_id]/publish`
+- `POST /api/fran/loyalty/assignments`
 
 Planned routes:
 
-- `POST /fran/pos/basket/preview`
-- `POST /fran/pos/rewards/quote`
-- `POST /fran/pos/rewards/commit`
-- `POST /fran/pos/rewards/reverse`
+- CRM ledger commit and reversal routes for settled POS execution events.
+- CRM reconciliation routes for queued/offline policy executions.
+
+The older basket preview and reward quote route names may remain as compatibility shims, but they should not become the source of canonical pricing or inventory truth.
+
+## Policy Bundle Loading
+
+Fran POS loads the policy bundle through `GET /api/fran/loyalty/policy-versions/active`.
+
+Query:
+
+- `workspaceId`: required for Supabase-backed reads.
+- `programKey`: defaults to `fran_with_benefits`.
+- `storeId`, `registerId`, `personId`, and `cohort`: optional rollout targeting inputs.
+- `at`: optional ISO datetime for testing effective windows.
+
+The route resolves active assignment rows first. A member/register/store/cohort/experiment assignment can point to an `active`, `testing`, or `approved` policy version. If no assignment matches, the route falls back to the active default policy for the program.
+
+Response includes:
+
+- `program`
+- `policyVersion`
+- `assignment`
+- `posContract`
+
+The `posContract` states that Fran POS is the executor, Fran SKUMS is pricing and inventory authority, and Fran CRM is ledger authority. POS must include the returned policy version and assignment ids in later execution/ledger events.
 
 ## Member Resolve
 
@@ -118,16 +149,18 @@ Claude/MCP staff questions use the same boundary. `fran.analytics.topCustomers` 
 
 ## Idempotency Rules
 
-Reward commit must be idempotent by:
+Loyalty ledger commit from POS execution must be idempotent by:
 
 ```text
-workspace_id + source_system + receipt_number + quote_id
+workspace_id + source_system + idempotency_key
 ```
 
-Reward reverse must be idempotent by:
+The POS execution payload should include the POS sale id, SKUMS quote id, optional SKUMS reservation id, policy version id, assignment id, points delta, reward refs, and evaluation trace.
+
+Reward or points reversal must be idempotent by:
 
 ```text
-workspace_id + source_system + receipt_number + original_commit_id + reversal_reason
+workspace_id + source_system + original_commit_id + reversal_reason
 ```
 
-Preview must not mutate points. Quote may reserve only if the published loyalty policy requires reservation.
+Policy bundle read and POS-side evaluation must not mutate points. CRM ledger writes happen only after POS payment succeeds and SKUMS sale/inventory commit has an idempotent reference.

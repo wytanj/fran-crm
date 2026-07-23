@@ -217,6 +217,22 @@ Points analytics use existing spine data:
 
 The analytics API returns aggregate series plus compact operator export rows. It should not expose unrelated graph rows. Member-level tier changes should still be preserved through source events, facts, execution logs, or future detailed cycle rows when needed. A future `fran_loyalty_ledger` can replace event-derived points flow without changing the dashboard response shape.
 
+## Fran Loyalty Policy Versions
+
+Fran CRM now stores the policy/version spine that Fran POS loads before checkout execution.
+
+Tables:
+
+- `fran_loyalty_programs`: workspace-scoped loyalty containers with a stable key, label, status, default currency, and metadata.
+- `fran_loyalty_policy_versions`: immutable policy snapshots with `version_key`, status, effective window, `rules jsonb`, source document reference, source hash, publish metadata, and audit provenance.
+- `fran_loyalty_policy_assignments`: rollout rows that map a workspace default, store, register, member, cohort, or experiment to a policy version.
+- `fran_loyalty_accounts`: current account snapshots for member refs, tier key, points balance, lifetime earned/redeemed totals, spend qualification, active policy reference, and external ids.
+- `fran_loyalty_ledger`: idempotent economic entries for earn, redeem, expire, adjust, reverse, and tier-adjust outcomes. Each row can keep the POS `evaluation_trace` used to settle the ledger.
+
+Policy version status values are `draft`, `testing`, `approved`, `active`, and `retired`. Draft/testing/approved versions can be assigned for controlled tests; a single active default policy remains the workspace fallback for a program.
+
+Fran POS is the runtime executor for the loaded policy bundle. Fran SKUMS owns canonical basket pricing, product context, availability, and inventory reservations. CRM ledger rows must preserve the POS policy version id, assignment id, source system, idempotency key, and evaluation trace so seasonal and experiment behavior remains auditable.
+
 ## Customer Memory Foundation
 
 The CRM now has Phase 1 customer-memory tables for cross-repo facts:

@@ -9,12 +9,13 @@ Fran CRM owns:
 - member identity resolution
 - Fran profile packs
 - POS-safe counter profile projection
-- loyalty policy and tier progress
+- versioned loyalty policy bundles and POS assignment rules
+- loyalty account snapshots, ledger settlement, and tier progress
 - loyalty analytics for tier mix, sign-ups, evaluation-cycle movement, point flow, liability, expiry risk, top spenders, lifecycle inactivity, birthdays, and campaign performance
-- reward quote, commit, and reversal decisions
+- reward ledger settlement, reversal audit, and reconciliation
 - customer facts, provenance, audit events, and agent proposals
 
-Fran CRM does not own basket mutation, payment execution, tender movement, receipt rendering, stock movement, fulfillment, or POS checkout UI.
+Fran CRM does not own basket mutation, payment execution, tender movement, receipt rendering, stock movement, fulfillment, POS checkout UI, canonical basket pricing, or inventory availability. Fran POS executes the loaded policy bundle during checkout, and Fran SKUMS owns pricing and inventory truth.
 
 ## Current Buildout Slice
 
@@ -23,6 +24,7 @@ Fran CRM does not own basket mutation, payment execution, tender movement, recei
 - The home surface is an internal operations overview, not a marketing landing page.
 - New workspaces install `fran_member`, `fran_loyalty`, and `fran_beauty_profile` packs by default.
 - Mocked POS-facing routes exist for member resolve and counter session.
+- Versioned Fran loyalty policy tables and API routes exist for draft creation, active POS bundle loading, publish, and rollout assignments.
 - Analytics reads expose aggregate Bronze, Silver, Gold, sign-up, evaluation-cycle movement, points-issued, points-redeemed, liability, expiry-risk, top-spender, inactivity, birthday, and campaign-performance series and compact export rows.
 - Claude/MCP connector groundwork includes workspace-scoped connector install records, staff identity links, capability grants, MCP request logs, an `/api/mcp` JSON-RPC tool endpoint, and the first governed tool: `fran.analytics.topCustomers`.
 - Fran contract docs live in `docs/fran-crm-contract.md` and `docs/fran-loyalty-policy.md`.
@@ -36,6 +38,11 @@ Initial Fran POS routes:
 - `POST /api/fran/pos/member/resolve`
 - `POST /api/fran/pos/counter-session`
 - `GET /api/fran/analytics`
+- `GET /api/fran/loyalty/policy-versions`
+- `POST /api/fran/loyalty/policy-versions`
+- `GET /api/fran/loyalty/policy-versions/active`
+- `POST /api/fran/loyalty/policy-versions/[version_id]/publish`
+- `POST /api/fran/loyalty/assignments`
 - `GET /api/agents/connectors/claude/setup`
 - `POST /api/agents/connectors/claude/setup`
 - `GET /api/mcp`

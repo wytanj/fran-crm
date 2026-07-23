@@ -131,6 +131,20 @@ Points analytics are aggregate reads over the same spine. Issued and redeemed po
 
 Customer report lists use compact workspace-scoped projections. Top spenders, at-risk customers, lapsed customers, and campaign performance are derived from transaction, loyalty, and campaign events in `crm_events`. Birthday member lists read `fran_member.birthday`, `mobile`, current tier, and points balance from profile packs.
 
+## Fran Loyalty Policy Versions
+
+Fran CRM stores loyalty policy versions so Fran POS can load and execute a stable policy bundle while SKUMS supplies pricing and inventory truth.
+
+| Table | Purpose |
+| --- | --- |
+| `fran_loyalty_programs` | Workspace loyalty containers such as `fran_with_benefits`. |
+| `fran_loyalty_policy_versions` | Draft, testing, approved, active, or retired rule snapshots with `rules jsonb`, source document refs, and effective windows. |
+| `fran_loyalty_policy_assignments` | Default, store, register, member, cohort, or experiment rollout mapping to a policy version. |
+| `fran_loyalty_accounts` | Current member/account balance, tier key, spend qualification, and policy reference. |
+| `fran_loyalty_ledger` | Idempotent earn, redeem, expire, adjust, reverse, and tier-adjust settlement entries from POS execution. |
+
+Fran POS includes policy version id, assignment id, SKUMS quote/reservation refs, POS sale id, and evaluation trace when it later commits ledger facts back to CRM.
+
 ## Customer Memory Tables
 
 The CRM acts as the customer graph, consent, memory, segments, and semantic-query foundation. It should not own POS execution, product taxonomy, or loyalty economics.

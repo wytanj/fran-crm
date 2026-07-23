@@ -18,8 +18,15 @@ export const returnEligibilityDecisions = [
 ] as const
 export const returnEligibilityActions = ['refund', 'exchange', 'store_credit', 'either'] as const
 export const franIdentifierTypes = ['phone', 'member_number', 'qr', 'barcode', 'external_ref'] as const
+export const franLoyaltyPolicyStatuses = ['draft', 'testing', 'approved', 'active', 'retired'] as const
+export const franLoyaltyAssignmentTypes = ['workspace_default', 'store', 'register', 'member', 'cohort', 'experiment'] as const
+export const franLoyaltyAssignmentStatuses = ['active', 'paused', 'retired'] as const
 
 const optionalDateHintSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+const optionalDateTimeSchema = z.string().datetime().optional()
+const policyKeySchema = z.string().trim().regex(/^[a-z][a-z0-9_]*$/)
+const policyVersionKeySchema = z.string().trim().regex(/^[a-z0-9][a-z0-9_.-]*$/)
+const policyAssignmentKeySchema = z.string().trim().regex(/^[a-z0-9][a-z0-9_.:-]*$/)
 
 export const schemaFieldPayloadSchema = z.object({
   workspaceId: z.string().uuid().optional(),
@@ -177,6 +184,126 @@ export const franCounterSessionPayloadSchema = z.object({
   }).default({})
 })
 
+export const franLoyaltyTierRuleSchema = z.object({
+  key: policyKeySchema,
+  label: z.string().trim().min(1),
+  rank: z.number().int().min(0),
+  spendThresholdMinor: z.number().int().min(0).default(0),
+  earnMultiplier: z.number().positive().default(1),
+  expiryFrozen: z.boolean().default(false),
+  metadata: z.record(z.string(), z.unknown()).default({})
+})
+
+export const franLoyaltyPolicyRulesSchema = z.object({
+  schemaVersion: z.number().int().positive().default(1),
+  programKey: policyKeySchema.default('fran_with_benefits'),
+  currency: z.string().trim().regex(/^[A-Z]{3}$/).default('SGD'),
+  execution: z.object({
+    policyOwner: z.literal('fran-crm').default('fran-crm'),
+    executor: z.literal('fran-pos').default('fran-pos'),
+    pricingAuthority: z.literal('fran-skums').default('fran-skums'),
+    inventoryAuthority: z.literal('fran-skums').default('fran-skums')
+  }).default({
+    policyOwner: 'fran-crm',
+    executor: 'fran-pos',
+    pricingAuthority: 'fran-skums',
+    inventoryAuthority: 'fran-skums'
+  }),
+  tiers: z.array(franLoyaltyTierRuleSchema).min(1),
+  earning: z.record(z.string(), z.unknown()).default({}),
+  redemption: z.record(z.string(), z.unknown()).default({}),
+  expiry: z.record(z.string(), z.unknown()).default({}),
+  bonuses: z.array(z.record(z.string(), z.unknown())).default([]),
+  rewards: z.array(z.record(z.string(), z.unknown())).default([]),
+  constraints: z.record(z.string(), z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({})
+})
+
+export const franLoyaltyPolicyVersionQuerySchema = workspaceScopedQuerySchema.extend({
+  programKey: policyKeySchema.default('fran_with_benefits'),
+  status: z.enum(franLoyaltyPolicyStatuses).optional(),
+  includeRetired: z.coerce.boolean().default(false),
+  limit: z.coerce.number().int().min(1).max(100).default(20)
+})
+
+export const franLoyaltyActivePolicyQuerySchema = workspaceScopedQuerySchema.extend({
+  /** Accept fran-pos `fran-v2` alias as well as CRM program key. */
+  programKey: z.string().trim().min(1).default('fran_with_benefits'),
+  storeId: z.string().trim().min(1).optional(),
+  registerId: z.string().trim().min(1).optional(),
+  personId: z.string().trim().min(1).optional(),
+  cohort: z.string().trim().min(1).optional(),
+  at: z.string().datetime().optional(),
+  /** `pos` = Fran POS FranLoyaltyPolicyBundle shape (root object). */
+  format: z.enum(['crm', 'pos']).default('crm')
+})
+
+export const franLoyaltyCommitSalePayloadSchema = z.object({
+  workspaceId: z.string().uuid().optional(),
+  saleId: z.string().trim().min(1),
+  receiptNo: z.string().trim().min(1).optional(),
+  idempotencyKey: z.string().trim().min(1),
+  memberId: z.string().trim().min(1),
+  session: z.record(z.string(), z.unknown()).optional(),
+  policyVersionId: z.string().trim().optional().nullable(),
+  assignmentId: z.string().trim().optional().nullable(),
+  skumsQuoteId: z.string().trim().optional().nullable(),
+  skumsReservationId: z.string().trim().optional().nullable(),
+  pointsEarned: z.number().optional(),
+  pointsRedeemed: z.number().optional().default(0),
+  redeemDiscountAmount: z.number().optional(),
+  voucherCodes: z.array(z.string()).optional(),
+  evaluationTrace: z.record(z.string(), z.unknown()).optional().nullable(),
+  netSpend: z.number().min(0),
+  currency: z.string().trim().regex(/^[A-Z]{3}$/).default('SGD'),
+  occurredAt: z.string().datetime().optional(),
+  birthdayActive: z.boolean().optional(),
+  categoryActive: z.boolean().optional(),
+  tierKey: z.string().trim().optional()
+})
+
+export const franLoyaltyPolicyVersionPayloadSchema = z.object({
+  workspaceId: z.string().uuid(),
+  programKey: policyKeySchema.default('fran_with_benefits'),
+  programName: z.string().trim().min(1).default("Fran's With Benefits"),
+  programDescription: z.string().trim().optional(),
+  defaultCurrency: z.string().trim().regex(/^[A-Z]{3}$/).default('SGD'),
+  versionKey: policyVersionKeySchema,
+  versionLabel: z.string().trim().min(1),
+  status: z.enum(['draft', 'testing', 'approved']).default('draft'),
+  effectiveFrom: optionalDateTimeSchema,
+  effectiveTo: optionalDateTimeSchema,
+  rules: franLoyaltyPolicyRulesSchema,
+  sourceDocumentRef: z.string().trim().min(1).optional(),
+  sourceHash: z.string().trim().min(1).optional(),
+  changeNote: z.string().trim().optional(),
+  metadata: z.record(z.string(), z.unknown()).default({})
+})
+
+export const franLoyaltyPolicyPublishPayloadSchema = z.object({
+  workspaceId: z.string().uuid(),
+  effectiveFrom: optionalDateTimeSchema,
+  effectiveTo: optionalDateTimeSchema,
+  changeNote: z.string().trim().optional(),
+  createDefaultAssignment: z.boolean().default(true)
+})
+
+export const franLoyaltyPolicyAssignmentPayloadSchema = z.object({
+  workspaceId: z.string().uuid(),
+  policyVersionId: z.string().uuid(),
+  programKey: policyKeySchema.default('fran_with_benefits'),
+  assignmentKey: policyAssignmentKeySchema,
+  assignmentType: z.enum(franLoyaltyAssignmentTypes),
+  targetRef: z.string().trim().min(1).optional(),
+  priority: z.number().int().min(0).max(10000).default(100),
+  allocationPercent: z.number().min(0).max(100).default(100),
+  status: z.enum(franLoyaltyAssignmentStatuses).default('active'),
+  startsAt: optionalDateTimeSchema,
+  endsAt: optionalDateTimeSchema,
+  assignmentRules: z.record(z.string(), z.unknown()).default({}),
+  externalIds: z.record(z.string(), z.unknown()).default({})
+})
+
 export type SchemaFieldPayload = z.infer<typeof schemaFieldPayloadSchema>
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>
 export type CrmEventPayload = z.infer<typeof crmEventPayloadSchema>
@@ -191,3 +318,16 @@ export type ReturnEligibilityDecision = typeof returnEligibilityDecisions[number
 export type ReturnEligibilityAction = typeof returnEligibilityActions[number]
 export type FranMemberResolvePayload = z.infer<typeof franMemberResolvePayloadSchema>
 export type FranCounterSessionPayload = z.infer<typeof franCounterSessionPayloadSchema>
+export type FranLoyaltyPolicyRules = z.infer<typeof franLoyaltyPolicyRulesSchema>
+export type FranLoyaltyPolicyVersionPayload = z.infer<typeof franLoyaltyPolicyVersionPayloadSchema>
+export type FranLoyaltyPolicyPublishPayload = z.infer<typeof franLoyaltyPolicyPublishPayloadSchema>
+export type FranLoyaltyPolicyAssignmentPayload = z.infer<typeof franLoyaltyPolicyAssignmentPayloadSchema>
+export type FranLoyaltyCommitSalePayload = z.infer<typeof franLoyaltyCommitSalePayloadSchema>
+
+/** Map POS programKey aliases to CRM program key. */
+export function normalizeFranProgramKey(raw: string | undefined | null): string {
+  const key = String(raw || 'fran_with_benefits').trim()
+  if (!key) return 'fran_with_benefits'
+  if (key === 'fran-v2' || key === 'fran_v2' || key === 'fwb') return 'fran_with_benefits'
+  return key
+}

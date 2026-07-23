@@ -203,6 +203,146 @@ Rules:
 - Top-spender, lifecycle, birthday, and campaign exports are compact operator lists. They expose only the fields required by the dashboard and do not expose full graph rows.
 - Transaction and campaign calculations use `crm_events` with CRM person references in `subject.customerKey`, `subject.personId`, `context.personId`, or `payload.personId`.
 
+### `GET /api/fran/loyalty/policy-versions`
+
+Lists loyalty policy versions for one workspace and program.
+
+Query:
+
+- `workspaceId`: required for Supabase-backed reads.
+- `programKey`: defaults to `fran_with_benefits`.
+- `status`: optional `draft`, `testing`, `approved`, `active`, or `retired` filter.
+- `includeRetired`: optional boolean, defaulting to `false`.
+- `limit`: optional integer from `1` to `100`, defaulting to `20`.
+
+Auth:
+
+- Supabase mode requires `Authorization: Bearer <access_token>`.
+- The user must belong to the workspace.
+
+Rules:
+
+- This route is a read surface for CRM operators and future POS policy loaders.
+- It returns policy `rules` as versioned JSON. Callers must use the `versionKey` and `id` instead of inferring behavior from labels.
+
+### `POST /api/fran/loyalty/policy-versions`
+
+Creates a draft, testing, or approved Fran loyalty policy version.
+
+Payload:
+
+```json
+{
+  "workspaceId": "workspace uuid",
+  "programKey": "fran_with_benefits",
+  "programName": "Fran's With Benefits",
+  "versionKey": "v2.1-seasonal-a",
+  "versionLabel": "Fran loyalty v2.1 seasonal A",
+  "status": "draft",
+  "rules": {
+    "schemaVersion": 1,
+    "programKey": "fran_with_benefits",
+    "currency": "SGD",
+    "execution": {
+      "policyOwner": "fran-crm",
+      "executor": "fran-pos",
+      "pricingAuthority": "fran-skums",
+      "inventoryAuthority": "fran-skums"
+    },
+    "tiers": [
+      { "key": "tier_1", "label": "Tier 1", "rank": 1, "spendThresholdMinor": 0, "earnMultiplier": 1 }
+    ]
+  }
+}
+```
+
+Auth:
+
+- Supabase mode requires `owner` or `admin`.
+- The route writes a `fran.loyalty_policy_version.created` audit event.
+
+Rules:
+
+- `active` is not accepted on create; use publish to make a version active.
+- Policy JSON must keep `fran-pos` as executor and `fran-skums` as pricing/inventory authority.
+
+### `GET /api/fran/loyalty/policy-versions/active`
+
+Returns the policy bundle Fran POS should execute.
+
+Query:
+
+- `workspaceId`: required for Supabase-backed reads.
+- `programKey`: defaults to `fran_with_benefits`.
+- `storeId`, `registerId`, `personId`, and `cohort`: optional assignment resolution inputs.
+- `at`: optional ISO datetime for effective-window testing.
+
+Auth:
+
+- Supabase mode requires workspace membership.
+
+Rules:
+
+- The route resolves active assignments first. Store, register, member, cohort, and experiment assignments may point to `testing`, `approved`, or `active` policy versions.
+- If no assignment matches, the route falls back to the active default policy version for the program.
+- Response includes `program`, `policyVersion`, optional `assignment`, and `posContract`.
+- `posContract.executor` is `fran-pos`; `pricingAuthority` and `inventoryAuthority` are `fran-skums`; ledger authority is `fran-crm`.
+
+### `POST /api/fran/loyalty/policy-versions/[version_id]/publish`
+
+Publishes a policy version as the active default for its program.
+
+Payload:
+
+```json
+{
+  "workspaceId": "workspace uuid",
+  "effectiveFrom": "2026-07-08T00:00:00.000Z",
+  "changeNote": "Seasonal earn change",
+  "createDefaultAssignment": true
+}
+```
+
+Auth:
+
+- Supabase mode requires `owner` or `admin`.
+- The route writes a `fran.loyalty_policy_version.published` audit event.
+
+Rules:
+
+- Publishing retires any previous active default policy version for the same workspace and program.
+- When `createDefaultAssignment` is true, the route upserts a workspace-default assignment key for that program.
+
+### `POST /api/fran/loyalty/assignments`
+
+Creates or updates a rollout assignment for a policy version.
+
+Payload:
+
+```json
+{
+  "workspaceId": "workspace uuid",
+  "policyVersionId": "policy version uuid",
+  "programKey": "fran_with_benefits",
+  "assignmentKey": "ion-orchard:seasonal-a",
+  "assignmentType": "store",
+  "targetRef": "ion-orchard",
+  "priority": 50,
+  "allocationPercent": 100,
+  "status": "active"
+}
+```
+
+Auth:
+
+- Supabase mode requires `owner` or `admin`.
+- The route writes a `fran.loyalty_policy_assignment.upserted` audit event.
+
+Rules:
+
+- Assignment types are `workspace_default`, `store`, `register`, `member`, `cohort`, and `experiment`.
+- Assignments let POS test seasonal or experimental policies without changing hard-coded checkout logic.
+
 ### `POST /api/v1/events`
 
 Accepts source-system facts from POS, loyalty, ecommerce, partner channels, or future integration workers.
