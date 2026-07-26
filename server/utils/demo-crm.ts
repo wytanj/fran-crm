@@ -51,13 +51,16 @@ export const demoCrmGraph: CrmGraphResponse = {
             consent_status: 'granted'
           },
           fran_loyalty: {
-            tier: 'Gold',
+            // FWB tiers F1/F2/F3 (legacy Gold maps to F3 in POS bridge)
+            tier: 'F3',
+            tier_key: 'F3',
             points_balance: 18420,
             points_expiring_soon: 1200,
             points_expiry_date: '2026-08-31',
             ytd_spend: 2840,
-            next_tier: 'Platinum',
-            spend_to_next_tier: 660
+            calendar_ytd_spend: 2840,
+            next_tier: null,
+            spend_to_next_tier: 0
           },
           fran_beauty_profile: {
             skin_type: 'Combination',

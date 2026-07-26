@@ -33,14 +33,29 @@ export default defineEventHandler(async (event) => {
   const sql = useCrmPostgres()
   const format = query.format
 
-  if ((!supabase && !sql) || !query.workspaceId) {
+  const headers = getHeaders(event)
+  const posClient = String(headers['x-pos-client'] || '').toLowerCase() === 'fran-pos'
+  const hasBearer = Boolean(
+    String(headers.authorization || headers.Authorization || '').match(/^Bearer\s+\S+/i)
+  )
+
+  // Demo when no DB, missing workspace, or unauthenticated POS (browser has no CRM user JWT).
+  if ((!supabase && !sql) || !query.workspaceId || (posClient && format === 'pos' && !hasBearer)) {
     const demo = buildDemoFranLoyaltyPolicyBundle(query.workspaceId || 'demo_workspace')
     const posPolicyBundle = buildDemoPosPolicyBundle(
       query.workspaceId || 'demo',
       query.programKey
     )
     if (format === 'pos') {
-      return posPolicyBundle
+      return {
+        ...posPolicyBundle,
+        warnings: [
+          ...(posPolicyBundle.warnings || []),
+          posClient && !hasBearer
+            ? 'POS unauthenticated — demo FWB policy (set CRM user Bearer for workspace Supabase policy).'
+            : 'demo_policy_bundle'
+        ]
+      }
     }
     return {
       ...demo,

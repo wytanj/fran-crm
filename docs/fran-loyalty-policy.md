@@ -37,9 +37,29 @@ Pure CRM ledger math lives in `server/fran/loyalty/fwb-engine.ts` (PDF golden ea
 
 Check: `node scripts/_check_loyalty_migrations.mjs` (from fran-crm root, with Supabase env).
 
-- **Demo** `commit_sale` works **in-memory without 0010**.
-- **Durable** ledger batches / Jan-1 expiry storage need **0010** applied.
+- **Demo** `commit_sale` works **in-memory** when no `workspaceId` / no Supabase service role.
+- **Durable** path: `POST /fran/pos/loyalty/commit-sale` with `workspaceId` → `commit-sale-persist.ts` writes **accounts + ledger + point batches** (requires **0009 + 0010**).
 - SKUMS / POS repos do **not** need a new migration for this L-base slice.
+
+### Vouchers (slice 2.3)
+
+| Route | Purpose |
+|-------|---------|
+| `POST /fran/pos/loyalty/vouchers/quote-redeem` | Fixed dens (200…2500) → QR code (1 month) |
+| `POST /fran/pos/loyalty/vouchers/authorize` | POS scan: birthday / category / dens redeem |
+| `POST /fran/pos/loyalty/vouchers/issue` | Issue birthday or category earn voucher (app/demo) |
+
+Demo scan codes: `BDAY`, `CAT`, `FWB-RDM-500-TEST01` (any valid dens).
+
+### Persist commit_sale (slice 2)
+
+When Supabase service role + valid `workspaceId` are present:
+
+1. Idempotency via ledger keys `{idempotencyKey}:earn` / `:redeem` / `:batch`
+2. Ensure program `fran_with_benefits`
+3. Load/create `fran_loyalty_accounts` by `member_ref`
+4. Load open `fran_loyalty_point_batches`; settle with pure FWB engine
+5. Insert ledger earn/redeem, update/insert batches, update account balance + YTD + tier
 
 Earn formula: `floor(spend × (tierRate + birthdayAdd + categoryAdd))` with tier rates 1.00 / 1.25 / 1.50.  
 Redeem dens: 200→$6 … 2500→$175 only.  

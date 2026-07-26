@@ -262,6 +262,31 @@ export const franLoyaltyCommitSalePayloadSchema = z.object({
   tierKey: z.string().trim().optional()
 })
 
+/** Quote fixed dens redeem (in-app → QR). */
+export const franLoyaltyQuoteRedeemDensPayloadSchema = z.object({
+  workspaceId: z.string().uuid().optional(),
+  memberId: z.string().trim().min(1),
+  points: z.number().int().positive(),
+  availablePoints: z.number().int().min(0),
+  currency: z.string().trim().regex(/^[A-Z]{3}$/).default('SGD')
+})
+
+/** Issue birthday / category earn voucher (demo / app). */
+export const franLoyaltyIssueEarnVoucherPayloadSchema = z.object({
+  workspaceId: z.string().uuid().optional(),
+  memberId: z.string().trim().min(1),
+  kind: z.enum(['birthday', 'category_bonus']),
+  currency: z.string().trim().regex(/^[A-Z]{3}$/).default('SGD')
+})
+
+/** POS scan authorize. */
+export const franLoyaltyAuthorizeVoucherPayloadSchema = z.object({
+  workspaceId: z.string().uuid().optional(),
+  code: z.string().trim().min(1),
+  memberId: z.string().trim().min(1).optional().nullable(),
+  saleId: z.string().trim().min(1).optional().nullable()
+})
+
 export const franLoyaltyPolicyVersionPayloadSchema = z.object({
   workspaceId: z.string().uuid(),
   programKey: policyKeySchema.default('fran_with_benefits'),
@@ -323,6 +348,9 @@ export type FranLoyaltyPolicyVersionPayload = z.infer<typeof franLoyaltyPolicyVe
 export type FranLoyaltyPolicyPublishPayload = z.infer<typeof franLoyaltyPolicyPublishPayloadSchema>
 export type FranLoyaltyPolicyAssignmentPayload = z.infer<typeof franLoyaltyPolicyAssignmentPayloadSchema>
 export type FranLoyaltyCommitSalePayload = z.infer<typeof franLoyaltyCommitSalePayloadSchema>
+export type FranLoyaltyQuoteRedeemDensPayload = z.infer<typeof franLoyaltyQuoteRedeemDensPayloadSchema>
+export type FranLoyaltyIssueEarnVoucherPayload = z.infer<typeof franLoyaltyIssueEarnVoucherPayloadSchema>
+export type FranLoyaltyAuthorizeVoucherPayload = z.infer<typeof franLoyaltyAuthorizeVoucherPayloadSchema>
 
 /** Map POS programKey aliases to CRM program key. */
 export function normalizeFranProgramKey(raw: string | undefined | null): string {

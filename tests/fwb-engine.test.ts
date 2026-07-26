@@ -8,6 +8,7 @@ import {
   FWB_TIER_RATES,
   getOrCreateDemoAccount,
   resetDemoLoyaltyState,
+  settleFwbSale,
   theoreticalExpiryFromEarnDate,
   tierFromCalendarYtdSpend
 } from '../server/fran/loyalty/fwb-engine'
@@ -164,8 +165,8 @@ describe('FWB L-base engine', () => {
     expect(bundle.earn.rounding).toBe('floor')
   })
 
-  it('commit-sale handler payload works for POS shape', () => {
-    const res = commitSaleFromPayload({
+  it('commit-sale handler payload works for POS shape (demo)', async () => {
+    const res = await commitSaleFromPayload({
       saleId: 'pos-sale-9',
       idempotencyKey: 'pos-idem-9',
       memberId: 'fran-member-001',
@@ -182,7 +183,49 @@ describe('FWB L-base engine', () => {
       }
     })
     expect(res.ok).toBe(true)
+    expect(res.mode).toBe('demo')
     expect(res.result.pointsEarned).toBe(125)
     expect(res.result.pointsBalanceAfter).toBe(2605)
+  })
+
+  it('settleFwbSale is pure and tracks batch updates for persistence', () => {
+    const prior = {
+      memberId: 'p1',
+      pointsBalance: 500,
+      calendarYtdSpend: 100,
+      tierKey: 'F1' as const,
+      batches: [
+        {
+          batchId: '11111111-1111-4111-8111-111111111111',
+          points: 500,
+          pointsRemaining: 500,
+          earnDate: '2026-01-01',
+          earnQuarter: 'Q1' as const,
+          theoreticalExpiryDate: '2027-03-31',
+          source: 'pos_sale',
+          frozen: false
+        }
+      ]
+    }
+    const s = settleFwbSale(
+      {
+        saleId: 's1',
+        memberId: 'p1',
+        idempotencyKey: 'idem-pure-1',
+        netSpend: 50,
+        tierKey: 'F1',
+        pointsEarned: 50,
+        pointsRedeemed: 200
+      },
+      prior
+    )
+    expect(s.result.pointsEarned).toBe(50)
+    expect(s.result.pointsRedeemed).toBe(200)
+    expect(s.account.pointsBalance).toBe(350)
+    expect(s.newEarnBatch?.points).toBe(50)
+    expect(s.updatedBatches.length).toBe(1)
+    expect(s.updatedBatches[0]?.pointsRemaining).toBe(300)
+    // prior not mutated
+    expect(prior.batches[0]?.pointsRemaining).toBe(500)
   })
 })

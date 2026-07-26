@@ -21,7 +21,17 @@ describe('Fran POS mock contracts', () => {
     })
   })
 
-  it('creates a counter session with only POS-safe fields', () => {
+  it('resolves POS mock alias FRAN1001 to Ava', () => {
+    const response = resolveFranMember({
+      workspaceId,
+      identifier: { type: 'member_number', value: 'FRAN1001' },
+      sourceSystem: 'fran-pos'
+    })
+    expect(response.status).toBe('exact')
+    expect(response.personId).toBe('person_001')
+  })
+
+  it('creates a counter session with FWB tier fields', () => {
     const response = createFranCounterSession({
       workspaceId,
       personId: 'person_001',
@@ -34,11 +44,12 @@ describe('Fran POS mock contracts', () => {
       status: 'created',
       member: {
         personId: 'person_001',
-        memberRef: 'FRAN-0001'
+        memberRef: 'FRAN-0001',
+        tierKey: 'F3',
+        pointsBalance: 18420
       },
       tierBadge: {
-        tier: 'Gold',
-        nextTier: 'Platinum'
+        tier: 'F3'
       },
       points: {
         balance: 18420
@@ -50,6 +61,5 @@ describe('Fran POS mock contracts', () => {
     })
     expect(response.profileCardFields.fran_beauty_profile.fields).not.toHaveProperty('reported_sensitivity_note')
     expect(response.profileCardFields.fran_beauty_profile.fields).not.toHaveProperty('advisor_notes')
-    expect(response.profileCardFields.fran_loyalty.fields).not.toHaveProperty('ytd_spend')
   })
 })

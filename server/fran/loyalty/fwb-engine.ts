@@ -247,23 +247,30 @@ export function resetDemoLoyaltyState() {
   demoIdempotency.clear()
 }
 
-/**
- * Settle earn + redeem for one POS sale (idempotent by key).
- * Pure ledger math — persistence is caller's job when using Supabase.
- */
-export function commitFwbSale(
-  input: FwbCommitSaleInput,
-  prior?: FwbMemberAccountState
-): FwbCommitSaleResult {
-  const dup = demoIdempotency.get(input.idempotencyKey)
-  if (dup) {
-    return { ...dup, status: 'duplicate' }
+export interface FwbSettlement {
+  result: FwbCommitSaleResult
+  account: FwbMemberAccountState
+  /** New earn batch to insert (if any). */
+  newEarnBatch: FwbPointBatch | null
+  /** Existing batches whose remaining changed (FIFO redeem). */
+  updatedBatches: FwbPointBatch[]
+}
+
+function cloneAccount(prior: FwbMemberAccountState): FwbMemberAccountState {
+  return {
+    ...prior,
+    batches: prior.batches.map((b) => ({ ...b }))
   }
+}
 
-  const account = prior
-    ? { ...prior, batches: [...prior.batches] }
-    : getOrCreateDemoAccount(input.memberId)
-
+/**
+ * Pure earn/redeem settlement — no demo maps. Persistence is the caller's job.
+ */
+export function settleFwbSale(
+  input: FwbCommitSaleInput,
+  prior: FwbMemberAccountState
+): FwbSettlement {
+  const account = cloneAccount(prior)
   const warnings: string[] = []
   const tierRate = fwbTierRateFromKey(input.tierKey || account.tierKey)
   let pointsEarned = input.pointsEarned
@@ -279,7 +286,9 @@ export function commitFwbSale(
 
   let pointsRedeemed = Math.max(0, Math.floor(input.pointsRedeemed || 0))
   if (pointsRedeemed > 0 && !isValidFwbRedeemDenom(pointsRedeemed)) {
-    warnings.push(`pointsRedeemed ${pointsRedeemed} is not a fixed FWB denom; still recording as adjust-style redeem`)
+    warnings.push(
+      `pointsRedeemed ${pointsRedeemed} is not a fixed FWB denom; still recording as adjust-style redeem`
+    )
   }
   if (pointsRedeemed > account.pointsBalance) {
     warnings.push('Redeem exceeds balance; clamping to available points')
@@ -291,9 +300,11 @@ export function commitFwbSale(
   const tierKey = normalizeFwbTierKey(account.tierKey) || 'F1'
   const frozen = tierKey === 'F2' || tierKey === 'F3'
 
-  let earnBatch: FwbPointBatch | null = null
+  const beforeRemaining = new Map(account.batches.map((b) => [b.batchId, b.pointsRemaining]))
+
+  let newEarnBatch: FwbPointBatch | null = null
   if (pointsEarned > 0) {
-    earnBatch = {
+    newEarnBatch = {
       batchId: `batch_${input.idempotencyKey.slice(0, 24)}_${Date.now().toString(36)}`,
       points: pointsEarned,
       pointsRemaining: pointsEarned,
@@ -303,7 +314,7 @@ export function commitFwbSale(
       source: 'pos_sale',
       frozen
     }
-    account.batches.push(earnBatch)
+    account.batches.push(newEarnBatch)
   }
 
   // FIFO redeem against soonest theoretical expiry
@@ -322,11 +333,16 @@ export function commitFwbSale(
   account.calendarYtdSpend = Math.max(0, account.calendarYtdSpend + Math.max(0, input.netSpend))
   const tierAfterRow = tierFromCalendarYtdSpend(account.calendarYtdSpend)
   account.tierKey = tierAfterRow.key
-  demoAccounts.set(account.memberId, account)
+
+  const updatedBatches = account.batches.filter((b) => {
+    if (newEarnBatch && b.batchId === newEarnBatch.batchId) return false
+    const prev = beforeRemaining.get(b.batchId)
+    return prev != null && prev !== b.pointsRemaining
+  })
 
   const ledgerEntryIds: string[] = []
-  if (pointsEarned > 0) ledgerEntryIds.push(`led_earn_${input.idempotencyKey}`)
-  if (pointsRedeemed > 0) ledgerEntryIds.push(`led_redeem_${input.idempotencyKey}`)
+  if (pointsEarned > 0) ledgerEntryIds.push(`${input.idempotencyKey}:earn`)
+  if (pointsRedeemed > 0) ledgerEntryIds.push(`${input.idempotencyKey}:redeem`)
 
   const result: FwbCommitSaleResult = {
     commitId: `fwb_commit_${input.idempotencyKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 48)}`,
@@ -337,12 +353,34 @@ export function commitFwbSale(
     pointsBalanceAfter: account.pointsBalance,
     tierAfter: account.tierKey,
     calendarYtdSpendAfter: account.calendarYtdSpend,
-    earnBatch,
+    earnBatch: newEarnBatch,
     ledgerEntryIds,
     warnings
   }
-  demoIdempotency.set(input.idempotencyKey, result)
-  return result
+
+  return { result, account, newEarnBatch, updatedBatches }
+}
+
+/**
+ * Demo/in-memory commit_sale (idempotent by key).
+ */
+export function commitFwbSale(
+  input: FwbCommitSaleInput,
+  prior?: FwbMemberAccountState
+): FwbCommitSaleResult {
+  const dup = demoIdempotency.get(input.idempotencyKey)
+  if (dup) {
+    return { ...dup, status: 'duplicate' }
+  }
+
+  const base = prior
+    ? cloneAccount(prior)
+    : getOrCreateDemoAccount(input.memberId)
+
+  const settlement = settleFwbSale(input, base)
+  demoAccounts.set(settlement.account.memberId, settlement.account)
+  demoIdempotency.set(input.idempotencyKey, settlement.result)
+  return settlement.result
 }
 
 /**
