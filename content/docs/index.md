@@ -12,7 +12,8 @@ Fran CRM is an opinionated crmOS build for Fran POS. It keeps the upstream works
 
 | Area | Use it for |
 | --- | --- |
-| API docs | Routes, payloads, response modes, Fran POS contracts, and API behavior. |
+| API docs | Routes, payloads, response modes, and API behavior. |
+| Fran POS | Counter contracts, loyalty path via SKUMS, and register setup checklist. |
 | Agent protocol | How agents read, propose, wait for approval, execute, and audit work. |
 | Agent skills | The specific CRM capabilities agents can safely use. |
 | Data model | Base entity types, minimum customer fields, graph relationships, and schema extension rules. |

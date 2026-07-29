@@ -21,7 +21,11 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/api/**': { cors: true },
-    '/fran/**': { cors: true }
+    '/fran/**': { cors: true },
+    // UI redirects after nav cleanup (API under /fran/pos/* unchanged)
+    '/integrations': { redirect: '/settings#integrations' },
+    '/fran': { redirect: '/docs/fran-pos' },
+    '/agents': { redirect: '/docs/agents' }
   },
   typescript: {
     strict: true

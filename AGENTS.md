@@ -20,6 +20,6 @@ The test suite includes documentation coverage checks for API routes. Add or upd
 - Work inside a single `crm_workspaces.id` boundary.
 - Prefer proposals over direct writes for schema changes, identity merges, exports, and integration actions.
 - Preserve provenance through `source`, `external_ids`, `crm_agent_proposals`, `crm_approvals`, `crm_execution_logs`, and `crm_audit_events`.
-- Keep Fran rules in `server/fran/**`, `server/api/fran/**`, `server/routes/fran/**`, or `app/pages/fran/**` unless the helper remains genuinely reusable upstream.
+- Keep Fran rules in `server/fran/**`, `server/api/fran/**`, `server/routes/fran/**`, or `content/docs/fran-pos.md` unless the helper remains genuinely reusable upstream.
 - Do not let Fran-specific loyalty or beauty profile rules leak into generic crmOS helpers.
 - Keep the API layer stable enough for future MCP tools.

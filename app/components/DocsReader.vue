@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, Database, FileCode, Search, Wrench, Workflow } from '@lucide/vue'
+import { BookOpen, Database, FileCode, Gift, Search, Wrench, Workflow } from '@lucide/vue'
 
 const props = defineProps<{
   path: string
@@ -28,6 +28,7 @@ const markdownFiles = import.meta.glob('../../content/docs/*.md', {
 const docsByPath: Record<string, string | undefined> = {
   '/docs': markdownFiles['../../content/docs/index.md'],
   '/docs/api': markdownFiles['../../content/docs/api.md'],
+  '/docs/fran-pos': markdownFiles['../../content/docs/fran-pos.md'],
   '/docs/agents': markdownFiles['../../content/docs/agents.md'],
   '/docs/skills': markdownFiles['../../content/docs/skills.md'],
   '/docs/model': markdownFiles['../../content/docs/model.md']
@@ -38,7 +39,8 @@ const docsNav = [
     title: 'Start here',
     items: [
       { label: 'Overview', to: '/docs', path: '/docs', description: 'Product principles and documentation map', icon: BookOpen },
-      { label: 'API docs', to: '/docs/api', path: '/docs/api', description: 'Routes, payloads, and API behavior', icon: FileCode }
+      { label: 'API docs', to: '/docs/api', path: '/docs/api', description: 'Routes, payloads, and API behavior', icon: FileCode },
+      { label: 'Fran POS', to: '/docs/fran-pos', path: '/docs/fran-pos', description: 'Counter contracts, loyalty path, setup checklist', icon: Gift }
     ]
   },
   {

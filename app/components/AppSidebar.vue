@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import {
   Blocks,
-  Bot,
   Braces,
   Building2,
   BarChart3,
-  CreditCard,
   Database,
   FileText,
   GitFork,
-  Gift,
   LayoutDashboard,
   LoaderCircle,
-  PlugZap,
   Settings
 } from '@lucide/vue'
 
@@ -39,22 +35,14 @@ const memberGroups: NavGroup[] = [
   {
     label: 'Data',
     items: [
-      { label: 'Graph', to: '/graph', icon: Database },
-      { label: 'Schema', to: '/schema', icon: Braces },
       { label: 'Analytics', to: '/analytics', icon: BarChart3 }
-    ]
-  },
-  {
-    label: 'Operations',
-    items: [
-      { label: 'Fran POS', to: '/fran', icon: Gift },
-      { label: 'Agents', to: '/agents', icon: Bot },
-      { label: 'Integrations', to: '/integrations', icon: PlugZap }
     ]
   },
   {
     label: 'Developer',
     items: [
+      { label: 'Graph', to: '/graph', icon: Database },
+      { label: 'Schema', to: '/schema', icon: Braces },
       { label: 'API', to: '/api-console', icon: GitFork },
       docs
     ]
@@ -63,7 +51,6 @@ const memberGroups: NavGroup[] = [
     label: 'Admin',
     items: [
       { label: 'Company', to: '/setup', icon: Building2 },
-      { label: 'Billing', to: '/pricing', icon: CreditCard },
       { label: 'Settings', to: '/settings', icon: Settings }
     ]
   }

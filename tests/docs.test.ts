@@ -49,12 +49,9 @@ describe('agent documentation coverage', () => {
     const landing = read('app/pages/index.vue')
     const sidebar = read('app/components/AppSidebar.vue')
     const protectedPages = [
-      ['/agents', 'app/pages/agents.vue'],
       ['/analytics', 'app/pages/analytics.vue'],
       ['/api-console', 'app/pages/api-console.vue'],
-      ['/fran', 'app/pages/fran/index.vue'],
       ['/graph', 'app/pages/graph.vue'],
-      ['/integrations', 'app/pages/integrations.vue'],
       ['/pricing', 'app/pages/pricing.vue'],
       ['/schema', 'app/pages/schema.vue'],
       ['/settings', 'app/pages/settings.vue'],
@@ -69,10 +66,19 @@ describe('agent documentation coverage', () => {
     expect(sidebar).toContain('memberGroups')
     expect(sidebar).toContain('publicGroups')
     expect(sidebar).toContain('user.value ? memberGroups : publicGroups')
+    expect(sidebar).not.toContain("to: '/agents'")
+    expect(sidebar).not.toContain("to: '/fran'")
+    expect(sidebar).not.toContain("to: '/integrations'")
+    expect(sidebar).not.toContain("to: '/pricing'")
+    expect(sidebar).not.toContain('Operations')
+    expect(sidebar).toContain("to: '/graph'")
+    expect(sidebar).toContain("to: '/schema'")
+    expect(sidebar).toContain('Developer')
+    expect(sidebar).toContain("to: '/settings'")
   })
 
-  it('keeps every public documentation page backed by Nuxt Content markdown', () => {
-    const docsPages = ['index', 'api', 'agents', 'skills', 'model']
+  it('keeps every public documentation page backed by markdown', () => {
+    const docsPages = ['index', 'api', 'fran-pos', 'agents', 'skills', 'model']
 
     for (const page of docsPages) {
       const appPath = page === 'index' ? 'app/pages/docs/index.vue' : `app/pages/docs/${page}.vue`

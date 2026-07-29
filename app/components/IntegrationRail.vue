@@ -17,7 +17,7 @@ defineProps<{
     </div>
     <p class="muted-text">
       Import path only. Live POS loyalty is linked from SKUMS — see
-      <NuxtLink to="/integrations">Integrations</NuxtLink>.
+      <NuxtLink to="/settings#integrations">Settings → Integrations</NuxtLink>.
     </p>
     <div class="integration-list">
       <div v-for="item in items" :key="item">
