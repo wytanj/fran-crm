@@ -118,12 +118,12 @@ const pointsSeries = computed(() => {
   return [
     {
       label: 'Issued',
-      color: '#0f766e',
+      color: '#0d8f83',
       points: trend.map((point) => ({ label: point.period, value: point.issued }))
     },
     {
       label: 'Redeemed',
-      color: '#c4563f',
+      color: '#bf5a12',
       points: trend.map((point) => ({ label: point.period, value: point.redeemed }))
     }
   ]
@@ -161,9 +161,9 @@ const customerCards = computed(() => {
 
   return [
     {
-      label: 'Top list size',
+      label: 'List size',
       value: formatNumber(customer?.topLimit || topLimit.value),
-      detail: 'Customers per export'
+      detail: 'Rows per export'
     },
     {
       label: 'At-risk customers',
@@ -305,17 +305,14 @@ function formatIsoDate(date: Date) {
   <div class="page-stack analytics-page">
     <div class="intro-strip">
       <div>
-        <p class="eyebrow">Fran loyalty analytics</p>
-        <h2>Member tiers, points economics, customer value, lifecycle risk, and campaign performance.</h2>
+        <p class="eyebrow">Fran loyalty</p>
+        <h2>Tier, points, and lifecycle reporting</h2>
+        <p>Member value, redemption economics, churn risk, and campaign results.</p>
       </div>
       <Activity :size="24" />
     </div>
 
-    <LoadingPanel
-      v-if="pending"
-      title="Loading analytics"
-      detail="Fetching Fran loyalty metrics, customer lists, and trend reports."
-    />
+    <LoadingPanel v-if="pending" title="Loading analytics" />
 
     <template v-else-if="analytics">
       <div v-if="requiresSetup" class="notice-bar">
@@ -323,16 +320,16 @@ function formatIsoDate(date: Date) {
         <NuxtLink to="/setup">Set up company</NuxtLink>
       </div>
       <div v-else-if="analytics.mode === 'demo' || analytics.warning" class="notice-bar">
-        {{ analytics.warning || 'Running with demo analytics data.' }}
+        {{ analytics.warning || 'Running on demo analytics data.' }}
       </div>
 
       <MetricStrip :metrics="metrics" />
 
-      <section class="analytics-panel analytics-overview-panel">
+      <section class="analytics-panel">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Customer reports</p>
-            <h2>{{ formatNumber(customerAnalytics?.topLimit || topLimit) }} row export lists</h2>
+            <h2>Export lists</h2>
           </div>
           <div class="analytics-controls">
             <label class="compact-field">
@@ -363,7 +360,7 @@ function formatIsoDate(date: Date) {
         </div>
       </section>
 
-      <section class="analytics-panel analytics-overview-panel">
+      <section class="analytics-panel">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Points economics</p>
@@ -479,8 +476,8 @@ function formatIsoDate(date: Date) {
             <h2>At-risk and lapsed members</h2>
           </div>
           <div class="movement-summary">
-            <span><ArrowDownRight :size="16" />{{ formatNumber(customerAnalytics?.atRiskCustomers.length || 0) }}</span>
-            <span><ArrowDownRight :size="16" />{{ formatNumber(customerAnalytics?.lapsedCustomers.length || 0) }}</span>
+            <span><ArrowDownRight :size="15" aria-hidden="true" />At risk {{ formatNumber(customerAnalytics?.atRiskCustomers.length || 0) }}</span>
+            <span><ArrowDownRight :size="15" aria-hidden="true" />Lapsed {{ formatNumber(customerAnalytics?.lapsedCustomers.length || 0) }}</span>
           </div>
         </div>
 
@@ -669,7 +666,7 @@ function formatIsoDate(date: Date) {
         <div class="section-heading">
           <div>
             <p class="eyebrow">Tier trend</p>
-            <h2>Bronze, Silver, Gold over time</h2>
+            <h2>Tier mix over time</h2>
           </div>
           <TrendingUp :size="20" />
         </div>
@@ -680,11 +677,11 @@ function formatIsoDate(date: Date) {
         <div class="section-heading">
           <div>
             <p class="eyebrow">Evaluation cycles</p>
-            <h2>Upgrade and downgrade counts</h2>
+            <h2>Tier movement</h2>
           </div>
           <div v-if="latestCycle" class="movement-summary">
-            <span><ArrowUpRight :size="16" />{{ formatNumber(latestCycle.upgradedCount) }}</span>
-            <span><ArrowDownRight :size="16" />{{ formatNumber(latestCycle.downgradedCount) }}</span>
+            <span><ArrowUpRight :size="15" aria-hidden="true" />Up {{ formatNumber(latestCycle.upgradedCount) }}</span>
+            <span><ArrowDownRight :size="15" aria-hidden="true" />Down {{ formatNumber(latestCycle.downgradedCount) }}</span>
           </div>
         </div>
 

@@ -66,8 +66,9 @@ describe('agent documentation coverage', () => {
       expect(landing, `Landing should not link ${path}`).not.toContain(`to="${path}"`)
     }
 
-    expect(sidebar).toContain('signedInNavItems')
-    expect(sidebar).toContain('visibleNavItems')
+    expect(sidebar).toContain('memberGroups')
+    expect(sidebar).toContain('publicGroups')
+    expect(sidebar).toContain('user.value ? memberGroups : publicGroups')
   })
 
   it('keeps every public documentation page backed by Nuxt Content markdown', () => {

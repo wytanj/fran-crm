@@ -1,22 +1,31 @@
 <script setup lang="ts">
-import { ArrowRight, BadgeCheck, BookOpen, FileText, ShieldCheck, UserRound } from '@lucide/vue'
+import { ArrowRight, BadgeCheck, Blocks, BookOpen, FileText, ShieldCheck, UserRound, Wrench } from '@lucide/vue'
 </script>
 
 <template>
   <div class="page-stack">
+    <div class="intro-strip">
+      <div>
+        <p class="eyebrow">Fran CRM</p>
+        <h2>A headless customer graph behind Fran POS</h2>
+        <p>Member identity, loyalty policy, and reward decisions served through one set of contracts.</p>
+      </div>
+      <Blocks :size="24" />
+    </div>
+
     <section class="two-column">
       <article class="settings-panel">
         <div class="section-heading compact-heading">
           <div>
-            <p class="eyebrow">Next Step</p>
+            <p class="eyebrow">Get started</p>
             <h2>Sign in</h2>
           </div>
           <UserRound :size="20" />
         </div>
         <NuxtLink class="nav-link" to="/login">
-          <BadgeCheck :size="18" />
-          <span>Sign in with Google</span>
-          <ArrowRight :size="16" />
+          <BadgeCheck :size="17" />
+          <span>Continue with Google</span>
+          <ArrowRight :size="15" />
         </NuxtLink>
       </article>
 
@@ -24,24 +33,24 @@ import { ArrowRight, BadgeCheck, BookOpen, FileText, ShieldCheck, UserRound } fr
         <div class="section-heading compact-heading">
           <div>
             <p class="eyebrow">Reference</p>
-            <h2>Read the contracts</h2>
+            <h2>Contracts</h2>
           </div>
           <BookOpen :size="20" />
         </div>
         <NuxtLink class="nav-link" to="/docs/api">
-          <FileText :size="18" />
-          <span>Read route contracts</span>
-          <ArrowRight :size="16" />
+          <FileText :size="17" />
+          <span>Route contracts</span>
+          <ArrowRight :size="15" />
         </NuxtLink>
         <NuxtLink class="nav-link" to="/docs/agents">
-          <ShieldCheck :size="18" />
-          <span>Review agent boundaries</span>
-          <ArrowRight :size="16" />
+          <ShieldCheck :size="17" />
+          <span>Agent boundaries</span>
+          <ArrowRight :size="15" />
         </NuxtLink>
         <NuxtLink class="nav-link" to="/docs/skills">
-          <ShieldCheck :size="18" />
-          <span>Review agent skills</span>
-          <ArrowRight :size="16" />
+          <Wrench :size="17" />
+          <span>Agent skills</span>
+          <ArrowRight :size="15" />
         </NuxtLink>
       </article>
     </section>

@@ -29,17 +29,17 @@ const modes = [
   {
     icon: Server,
     label: 'Local mode',
-    detail: 'Use demo data and local fixtures while Fran POS contracts are being shaped.'
+    detail: 'Demo data and local fixtures while POS contracts are still being shaped.'
   },
   {
     icon: Building2,
     label: 'Workspace mode',
-    detail: 'Use Supabase auth, workspace membership, profile packs, and server-side persistence.'
+    detail: 'Supabase auth, membership, profile packs, and server-side persistence.'
   },
   {
     icon: CreditCard,
     label: 'Billing boundary',
-    detail: 'Inherited crmOS billing records remain available for internal workspace accounting.'
+    detail: 'Inherited crmOS billing records, kept for internal accounting.'
   }
 ]
 
@@ -54,8 +54,9 @@ onMounted(async () => {
     <div v-if="billingNotice" class="notice-bar">{{ billingNotice }}</div>
     <div class="intro-strip">
       <div>
-        <p class="eyebrow">Workspace mode</p>
-        <h2>Fran CRM keeps billing and workspace setup as internal operating boundaries, not acquisition flows.</h2>
+        <p class="eyebrow">Billing</p>
+        <h2>How this workspace runs</h2>
+        <p>Setup and billing are internal operating boundaries, not a sales flow.</p>
       </div>
       <NuxtLink class="secondary-button" :to="configureSettingsPath">
         {{ user ? 'Configure Supabase' : 'Sign in to configure' }}

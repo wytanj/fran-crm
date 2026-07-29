@@ -9,22 +9,22 @@ const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSet
 
 const pageTitle = computed(() => {
   const labels: Record<string, string> = {
-    '/': 'Fran CRM',
-    '/graph': 'Customer Graph',
+    '/': 'Home',
+    '/graph': 'Customer graph',
     '/analytics': 'Analytics',
-    '/schema': 'Schema Designer',
-    '/api-console': 'API Layer',
-    '/fran': 'Fran POS Contracts',
-    '/agents': 'Agent Workbench',
-    '/docs': 'Documentation',
-    '/docs/api': 'API Documentation',
-    '/docs/agents': 'Agent Documentation',
-    '/docs/skills': 'Agent Skills',
+    '/schema': 'Schema',
+    '/api-console': 'API',
+    '/fran': 'Fran POS',
+    '/agents': 'Agents',
+    '/docs': 'Docs',
+    '/docs/api': 'API docs',
+    '/docs/agents': 'Agent protocol',
+    '/docs/skills': 'Agent skills',
     '/integrations': 'Integrations',
-    '/pricing': 'Workspace Mode',
-    '/setup': 'Company Setup',
-    '/settings': 'Workspace Settings',
-    '/login': 'Sign In'
+    '/pricing': 'Billing',
+    '/setup': 'Company',
+    '/settings': 'Settings',
+    '/login': 'Sign in'
   }
 
   return labels[route.path] || 'Fran CRM'
@@ -55,7 +55,7 @@ async function handleSignOut() {
     <div class="topbar-actions">
       <label class="search-box">
         <Search :size="17" />
-        <input v-model="query" type="search" placeholder="Search people, orders, tickets" />
+        <input v-model="query" type="search" placeholder="Search people, orders, tickets" aria-label="Search" />
       </label>
       <NuxtLink v-if="user" class="icon-button" to="/settings" title="API keys">
         <KeyRound :size="18" />
@@ -73,8 +73,8 @@ async function handleSignOut() {
         <LoaderCircle v-if="workspacePending" class="button-spinner" :size="18" aria-hidden="true" />
         <Building2 v-else :size="18" />
         <span>
-          <strong>{{ workspacePending ? 'Loading workspace' : primaryWorkspace?.name || 'Setup company' }}</strong>
-          <small>{{ workspacePending ? 'Please wait' : primaryWorkspace?.role || 'owner' }}</small>
+          <strong>{{ workspacePending ? 'Loading' : primaryWorkspace?.name || 'Set up company' }}</strong>
+          <small>{{ workspacePending ? 'Workspace' : primaryWorkspace?.role || 'owner' }}</small>
         </span>
       </NuxtLink>
       <button v-if="user" class="icon-button" type="button" title="Sign out" @click="handleSignOut">

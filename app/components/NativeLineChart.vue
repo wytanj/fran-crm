@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { buildYTicks } from '~/utils/chart-ticks'
+
 const props = defineProps<{
   points: Array<{
     label: string
@@ -57,12 +59,7 @@ const areaPath = computed(() => {
 
 const labelStride = computed(() => Math.max(1, Math.ceil(props.points.length / 6)))
 const xLabels = computed(() => coordinates.value.filter((_, index) => index % labelStride.value === 0 || index === coordinates.value.length - 1))
-const yTicks = computed(() => [0, 0.5, 1].map((ratio) => {
-  const value = Math.round(maxValue.value * ratio)
-  const y = padding.top + plotHeight.value - (ratio * plotHeight.value)
-
-  return { value, y }
-}))
+const yTicks = computed(() => buildYTicks(maxValue.value, padding.top, plotHeight.value))
 </script>
 
 <template>
@@ -89,7 +86,7 @@ const yTicks = computed(() => [0, 0.5, 1].map((ratio) => {
       <path v-if="areaPath" class="chart-area" :d="areaPath" />
       <path v-if="linePath" class="chart-line" :d="linePath" />
       <g v-if="coordinates.length <= 40" class="chart-points">
-        <circle v-for="point in coordinates" :key="point.label" :cx="point.x" :cy="point.y" r="3.5">
+        <circle v-for="point in coordinates" :key="point.label" :cx="point.x" :cy="point.y" r="4">
           <title>{{ point.label }}: {{ point.value }}</title>
         </circle>
       </g>

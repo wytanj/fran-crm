@@ -44,9 +44,9 @@ function relationshipLabel(relationship: CrmRelationship) {
       <div class="section-heading">
         <div>
           <p class="eyebrow">Identity spine</p>
-          <h2>Graph of customers, accounts, orders, and interactions</h2>
+          <h2>Customers, accounts, orders, and interactions</h2>
         </div>
-        <span class="status-pill">API first</span>
+        <span class="status-pill">{{ entities.length }} entities</span>
       </div>
 
       <div class="node-cloud">

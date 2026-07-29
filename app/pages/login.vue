@@ -58,7 +58,7 @@ async function signIn() {
   <div class="auth-page">
     <form class="auth-panel" @submit.prevent="signIn">
       <p class="eyebrow">Workspace access</p>
-      <h2>Sign in to your CRM workspace</h2>
+      <h2>Sign in</h2>
       <button class="primary-button" type="button" :disabled="googlePending || !isConfigured" @click="continueWithGoogle">
         <LoaderCircle v-if="googlePending" class="button-spinner" :size="17" aria-hidden="true" />
         <UserRound v-else :size="17" />
@@ -76,9 +76,9 @@ async function signIn() {
         <LogIn v-else :size="17" />
         <span>{{ emailPending ? 'Sending link' : 'Send magic link' }}</span>
       </button>
-      <p v-if="sent" class="notice-text">Check your email for the sign-in link. In demo mode this confirms the auth flow shape.</p>
+      <p v-if="sent" class="notice-text">Check your email for the sign-in link.</p>
       <p v-if="error" class="form-error">{{ error }}</p>
-      <p class="notice-text">Company setup opens after sign-in when your user has no workspace yet.</p>
+      <p class="notice-text">New accounts continue to company setup.</p>
     </form>
   </div>
 </template>

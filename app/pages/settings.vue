@@ -20,7 +20,8 @@ const envRows = [
     <div class="intro-strip">
       <div>
         <p class="eyebrow">Self-host setup</p>
-        <h2>Apply the Supabase migration, then point the Nuxt app at your project keys.</h2>
+        <h2>Connect your Supabase project</h2>
+        <p>Apply the migrations, then point the Nuxt app at your project keys.</p>
       </div>
       <Database :size="24" />
     </div>
@@ -56,7 +57,7 @@ supabase/migrations/0006_fran_loyalty_analytics.sql
 supabase/migrations/0007_agent_connectors_capabilities.sql
 supabase/migrations/0008_mcp_request_logging.sql</pre>
         </div>
-        <p class="muted-text">The migrations include workspace membership, graph entities, relationships, custom field definitions, customer memory, profile packs, return eligibility, Fran loyalty analytics, agent connector installs, staff identity links, capability grants, integration accounts, billing records, proposals, approvals, MCP request logs, execution logs, and audit events.</p>
+        <p class="muted-text">Covers workspace membership, graph entities, custom fields, customer memory, profile packs, loyalty analytics, agent connectors, MCP logs, and audit events.</p>
       </article>
     </section>
   </div>

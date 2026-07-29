@@ -353,8 +353,8 @@ function slugify(value: string) {
       <strong>On this page</strong>
       <a v-for="heading in headings" :key="heading.id" :href="`#${heading.id}`">{{ heading.text }}</a>
       <div class="docs-cta-box">
-        <span>Need the operating surface?</span>
-        <NuxtLink to="/graph">Open graph</NuxtLink>
+        <span>Open the app</span>
+        <NuxtLink to="/graph">Customer graph</NuxtLink>
         <NuxtLink to="/login">Sign in</NuxtLink>
       </div>
     </aside>

@@ -25,16 +25,13 @@ onMounted(async () => {
   <div class="page-stack">
     <div class="intro-strip">
       <div>
-        <p class="eyebrow">Headless data contract</p>
-        <h2>Start with the customer fields most commerce systems already expose, then let teams and agents add their own schema.</h2>
+        <p class="eyebrow">Data contract</p>
+        <h2>Customer schema</h2>
+        <p>Start with the fields commerce systems already expose, then let teams and agents extend them.</p>
       </div>
       <NuxtLink class="secondary-button" to="/api-console">View API</NuxtLink>
     </div>
-    <LoadingPanel
-      v-if="pending"
-      title="Loading schema"
-      detail="Fetching field definitions and installable profile packs."
-    />
+    <LoadingPanel v-if="pending" title="Loading schema" />
     <SchemaDesigner
       v-else
       :fields="fields"

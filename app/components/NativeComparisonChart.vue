@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { buildYTicks } from '~/utils/chart-ticks'
+
 type ComparisonPoint = {
   label: string
   value: number
@@ -59,12 +61,7 @@ const xLabels = computed(() => labels.value
     return { label, index, x }
   })
   .filter((label) => label.index % labelStride.value === 0 || label.index === labels.value.length - 1))
-const yTicks = computed(() => [0, 0.5, 1].map((ratio) => {
-  const value = Math.round(maxValue.value * ratio)
-  const y = padding.top + plotHeight.value - (ratio * plotHeight.value)
-
-  return { value, y }
-}))
+const yTicks = computed(() => buildYTicks(maxValue.value, padding.top, plotHeight.value))
 </script>
 
 <template>
@@ -96,7 +93,7 @@ const yTicks = computed(() => [0, 0.5, 1].map((ratio) => {
           class="comparison-point"
           :cx="point.x"
           :cy="point.y"
-          r="3"
+          r="4"
           :fill="serie.color"
         >
           <title>{{ serie.label }} {{ point.label }}: {{ point.value }}</title>

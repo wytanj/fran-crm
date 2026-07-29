@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { buildYTicks } from '~/utils/chart-ticks'
 import type { FranMemberTier, FranTierTrendPoint } from '~/types/crm'
 
 const props = defineProps<{
@@ -13,29 +14,35 @@ const padding = {
   bottom: 42,
   left: 42
 }
+// Tiers are ranked, so they get an ordinal ramp (one hue, light to dark) rather
+// than three metallic hues. Validated with the dataviz palette checker.
 const tierColors: Record<FranMemberTier, string> = {
-  Bronze: '#a66a2d',
-  Silver: '#7d8885',
-  Gold: '#d19a24'
+  Bronze: '#d3a04a',
+  Silver: '#a4741d',
+  Gold: '#6b4a10'
 }
 const tiers: FranMemberTier[] = ['Bronze', 'Silver', 'Gold']
+const segmentGap = 2
 
 const plotWidth = computed(() => width - padding.left - padding.right)
 const plotHeight = computed(() => height - padding.top - padding.bottom)
 const maxTotal = computed(() => Math.max(1, ...props.points.map((point) => point.total)))
+// Bars sit in evenly divided bands rather than on line-chart point positions, so
+// the first and last bar stay inside the plot area instead of overhanging it.
+const bandWidth = computed(() => props.points.length ? plotWidth.value / props.points.length : plotWidth.value)
 const barWidth = computed(() => {
   if (!props.points.length) {
     return 18
   }
 
-  return Math.max(18, Math.min(54, plotWidth.value / props.points.length - 12))
+  return Math.max(14, Math.min(54, bandWidth.value - 12))
 })
 
 const bars = computed(() => props.points.map((point, index) => {
-  const slot = props.points.length <= 1 ? plotWidth.value / 2 : (index / (props.points.length - 1)) * plotWidth.value
+  const slot = bandWidth.value * (index + 0.5)
   const x = padding.left + slot - (barWidth.value / 2)
   let yCursor = padding.top + plotHeight.value
-  const segments = tiers.map((tier) => {
+  const segments = tiers.map((tier, tierIndex) => {
     const rawValue = tier === 'Bronze' ? point.bronze : tier === 'Silver' ? point.silver : point.gold
     const segmentHeight = (rawValue / maxTotal.value) * plotHeight.value
     yCursor -= segmentHeight
@@ -46,7 +53,9 @@ const bars = computed(() => props.points.map((point, index) => {
       x,
       y: yCursor,
       width: barWidth.value,
-      height: segmentHeight,
+      // Every segment above the baseline loses its last 2px so adjacent fills
+      // stay separated by the surface instead of touching.
+      height: tierIndex === 0 ? segmentHeight : Math.max(0, segmentHeight - segmentGap),
       color: tierColors[tier]
     }
   })
@@ -61,12 +70,7 @@ const bars = computed(() => props.points.map((point, index) => {
 
 const labelStride = computed(() => Math.max(1, Math.ceil(props.points.length / 6)))
 const xLabels = computed(() => bars.value.filter((_, index) => index % labelStride.value === 0 || index === bars.value.length - 1))
-const yTicks = computed(() => [0, 0.5, 1].map((ratio) => {
-  const value = Math.round(maxTotal.value * ratio)
-  const y = padding.top + plotHeight.value - (ratio * plotHeight.value)
-
-  return { value, y }
-}))
+const yTicks = computed(() => buildYTicks(maxTotal.value, padding.top, plotHeight.value))
 </script>
 
 <template>
@@ -100,7 +104,7 @@ const yTicks = computed(() => [0, 0.5, 1].map((ratio) => {
             :width="segment.width"
             :height="Math.max(0, segment.height)"
             :fill="segment.color"
-            rx="3"
+            rx="2"
           >
             <title>{{ bar.period }} {{ segment.tier }}: {{ segment.value }}</title>
           </rect>

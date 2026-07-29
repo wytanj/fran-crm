@@ -5,6 +5,7 @@ import {
   Braces,
   Building2,
   BarChart3,
+  CreditCard,
   Database,
   FileText,
   GitFork,
@@ -15,26 +16,61 @@ import {
   Settings
 } from '@lucide/vue'
 
-const navItems = [
-  { label: 'Home', to: '/', icon: LayoutDashboard },
-  { label: 'Docs', to: '/docs', icon: FileText }
+type NavItem = {
+  label: string
+  to: string
+  icon: typeof LayoutDashboard
+}
+
+type NavGroup = {
+  label?: string
+  items: NavItem[]
+}
+
+const home: NavItem = { label: 'Home', to: '/', icon: LayoutDashboard }
+const docs: NavItem = { label: 'Docs', to: '/docs', icon: FileText }
+
+const publicGroups: NavGroup[] = [
+  { items: [home, docs] }
 ]
 
-const signedInNavItems = [
-  { label: 'Graph', to: '/graph', icon: Database },
-  { label: 'Analytics', to: '/analytics', icon: BarChart3 },
-  { label: 'Setup', to: '/setup', icon: Building2 },
-  { label: 'Schema', to: '/schema', icon: Braces },
-  { label: 'API', to: '/api-console', icon: GitFork },
-  { label: 'Agents', to: '/agents', icon: Bot },
-  { label: 'Workspace', to: '/pricing', icon: Building2 },
-  { label: 'Fran', to: '/fran', icon: Gift },
-  { label: 'Integrations', to: '/integrations', icon: PlugZap },
-  { label: 'Settings', to: '/settings', icon: Settings }
+const memberGroups: NavGroup[] = [
+  { items: [home] },
+  {
+    label: 'Data',
+    items: [
+      { label: 'Graph', to: '/graph', icon: Database },
+      { label: 'Schema', to: '/schema', icon: Braces },
+      { label: 'Analytics', to: '/analytics', icon: BarChart3 }
+    ]
+  },
+  {
+    label: 'Operations',
+    items: [
+      { label: 'Fran POS', to: '/fran', icon: Gift },
+      { label: 'Agents', to: '/agents', icon: Bot },
+      { label: 'Integrations', to: '/integrations', icon: PlugZap }
+    ]
+  },
+  {
+    label: 'Developer',
+    items: [
+      { label: 'API', to: '/api-console', icon: GitFork },
+      docs
+    ]
+  },
+  {
+    label: 'Admin',
+    items: [
+      { label: 'Company', to: '/setup', icon: Building2 },
+      { label: 'Billing', to: '/pricing', icon: CreditCard },
+      { label: 'Settings', to: '/settings', icon: Settings }
+    ]
+  }
 ]
 
 const { loading: authLoading, refreshSession, startAuthListener, user } = useCrmAuth()
-const visibleNavItems = computed(() => user.value ? [...navItems, ...signedInNavItems] : navItems)
+const navGroups = computed(() => user.value ? memberGroups : publicGroups)
 
 onMounted(async () => {
   startAuthListener()
@@ -46,30 +82,39 @@ onMounted(async () => {
   <aside class="sidebar">
     <NuxtLink class="brand" to="/">
       <span class="brand-mark">
-        <Blocks :size="19" />
+        <Blocks :size="18" />
       </span>
       <span>
         <strong>Fran CRM</strong>
-        <small>Member and rewards brain</small>
+        <small>Members and rewards</small>
       </span>
     </NuxtLink>
 
-    <nav class="nav-list" aria-label="Primary">
-      <NuxtLink v-for="item in visibleNavItems" :key="item.to" :to="item.to" class="nav-link">
-        <component :is="item.icon" :size="18" />
-        <span>{{ item.label }}</span>
-      </NuxtLink>
+    <nav class="nav-groups" aria-label="Primary">
+      <section v-for="(group, index) in navGroups" :key="group.label || `group-${index}`" class="nav-group">
+        <h2 v-if="group.label">{{ group.label }}</h2>
+        <NuxtLink
+          v-for="item in group.items"
+          :key="`${group.label || 'top'}-${item.to}`"
+          :to="item.to"
+          :title="item.label"
+          class="nav-link"
+        >
+          <component :is="item.icon" :size="17" />
+          <span>{{ item.label }}</span>
+        </NuxtLink>
+      </section>
       <span v-if="authLoading && !user" class="nav-loading" role="status" aria-live="polite" aria-busy="true">
-        <LoaderCircle :size="16" aria-hidden="true" />
+        <LoaderCircle :size="15" aria-hidden="true" />
         <span>Checking session</span>
       </span>
     </nav>
 
     <div class="sidebar-footer">
-      <Database :size="18" />
+      <Database :size="17" />
       <div>
-        <strong>Supabase project</strong>
-        <span>Workspace and loyalty data.</span>
+        <strong>Supabase</strong>
+        <span>Workspace and loyalty data</span>
       </div>
     </div>
   </aside>

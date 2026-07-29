@@ -126,7 +126,7 @@ async function savePack(pack: CrmProfilePackDefinition) {
     <div class="section-heading compact-heading">
       <div>
         <p class="eyebrow">Profile packs</p>
-        <h2>Context-specific customer fields</h2>
+        <h2>Pack fields</h2>
       </div>
     </div>
 

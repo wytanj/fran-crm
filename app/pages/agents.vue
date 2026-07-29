@@ -7,11 +7,11 @@ const { data, pending } = await useCrmBootstrap()
 const proposals = computed(() => data.value?.graph.proposals || [])
 
 const capabilities = [
-  'Identity resolution with approval before merging',
-  'Schema suggestions from import batches and agent context',
-  'Audience creation with audit logs before export',
-  'B2B account promotion when repeat orders look like a company relationship',
-  'Execution logs for every approved agent action'
+  'Identity resolution, approved before any merge',
+  'Schema suggestions drawn from import batches',
+  'Audience creation, audit-logged before export',
+  'B2B account promotion from repeat order patterns',
+  'Execution logs for every approved action'
 ]
 </script>
 
@@ -20,14 +20,11 @@ const capabilities = [
     <div class="intro-strip">
       <div>
         <p class="eyebrow">Agentic CRM</p>
-        <h2>Agents can propose, but the CRM keeps approvals, execution logs, and provenance in the core data spine.</h2>
+        <h2>Agents propose, the CRM decides</h2>
+        <p>Approvals, execution logs, and provenance stay in the core data spine.</p>
       </div>
     </div>
-    <LoadingPanel
-      v-if="pending"
-      title="Loading agent workspace"
-      detail="Fetching proposals and guarded execution context."
-    />
+    <LoadingPanel v-if="pending" title="Loading agent workspace" />
     <div v-else class="two-column">
       <AgentProposalList :proposals="proposals" />
       <section class="capability-list">

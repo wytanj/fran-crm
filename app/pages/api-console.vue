@@ -4,18 +4,18 @@ definePageMeta({
 })
 
 const endpoints = [
-  { method: 'GET', path: '/api/crm/bootstrap', purpose: 'Load workspace graph, fields, proposals, and integration state.' },
-  { method: 'GET', path: '/api/fran/analytics', purpose: 'Load Fran loyalty tier snapshot, sign-up trends, and evaluation-cycle movement.' },
+  { method: 'GET', path: '/api/crm/bootstrap', purpose: 'Load the workspace graph, fields, proposals, and integration state.' },
+  { method: 'GET', path: '/api/fran/analytics', purpose: 'Load the tier snapshot, sign-up trends, and cycle movement.' },
   { method: 'GET', path: '/api/graph/search?q=ava', purpose: 'Search labels, tags, and normalized entity attributes.' },
-  { method: 'GET', path: '/api/profile-packs', purpose: 'List installable and installed domain profile packs for a workspace.' },
-  { method: 'GET', path: '/api/profile-packs/fran_beauty_profile', purpose: 'Inspect a dynamic Fran profile pack definition and its fields.' },
-  { method: 'POST', path: '/api/profile-packs/fran_beauty_profile/install', purpose: 'Install a pack idempotently into a workspace.' },
-  { method: 'POST', path: '/api/fran/pos/member/resolve', purpose: 'Resolve a Fran POS member identifier without exposing raw CRM tables.' },
-  { method: 'POST', path: '/api/fran/pos/counter-session', purpose: 'Create the POS-safe Fran counter projection.' },
-  { method: 'GET', path: '/api/v1/people/person_001/counter-profile', purpose: 'Return only POS-visible profile fields and advisory warnings.' },
-  { method: 'PATCH', path: '/api/v1/people/person_001/profile-fields', purpose: 'Update pack-scoped fields and write customer-profile facts.' },
-  { method: 'POST', path: '/api/schema/fields', purpose: 'Add a custom field definition for a workspace entity type.' },
-  { method: 'POST', path: '/api/billing/checkout', purpose: 'Record the inherited internal billing boundary.' }
+  { method: 'GET', path: '/api/profile-packs', purpose: 'List installable and installed profile packs.' },
+  { method: 'GET', path: '/api/profile-packs/fran_beauty_profile', purpose: 'Inspect one pack definition and its fields.' },
+  { method: 'POST', path: '/api/profile-packs/fran_beauty_profile/install', purpose: 'Install a pack idempotently.' },
+  { method: 'POST', path: '/api/fran/pos/member/resolve', purpose: 'Resolve a POS member identifier without exposing CRM tables.' },
+  { method: 'POST', path: '/api/fran/pos/counter-session', purpose: 'Create the POS-safe counter projection.' },
+  { method: 'GET', path: '/api/v1/people/person_001/counter-profile', purpose: 'Return POS-visible fields and advisory warnings only.' },
+  { method: 'PATCH', path: '/api/v1/people/person_001/profile-fields', purpose: 'Update pack-scoped fields and write profile facts.' },
+  { method: 'POST', path: '/api/schema/fields', purpose: 'Add a custom field to a workspace entity type.' },
+  { method: 'POST', path: '/api/billing/checkout', purpose: 'Record the internal billing boundary.' }
 ]
 
 const samplePayload = {
@@ -35,7 +35,8 @@ const samplePayload = {
     <div class="intro-strip">
       <div>
         <p class="eyebrow">API layer</p>
-        <h2>The UI is one client of the CRM spine. Integrations, agents, and future MCP servers should use the same contracts.</h2>
+        <h2>One spine, many clients</h2>
+        <p>This UI is just one caller. Integrations, agents, and MCP servers use the same routes.</p>
       </div>
     </div>
     <section class="api-grid">

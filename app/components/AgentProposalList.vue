@@ -22,7 +22,7 @@ const statusIcon = {
     <div class="section-heading">
       <div>
         <p class="eyebrow">Agent workflow</p>
-        <h2>Proposals before execution</h2>
+        <h2>Awaiting review</h2>
       </div>
     </div>
     <article v-for="proposal in proposals" :key="proposal.id" class="proposal-card">

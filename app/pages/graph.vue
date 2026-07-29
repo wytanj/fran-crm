@@ -23,18 +23,14 @@ onMounted(async () => {
 
 <template>
   <div class="page-stack">
-    <LoadingPanel
-      v-if="pending"
-      title="Loading CRM graph"
-      detail="Fetching workspace entities, relationships, proposals, and integrations."
-    />
+    <LoadingPanel v-if="pending" title="Loading CRM graph" />
     <template v-else-if="graph">
       <div v-if="requiresSetup" class="notice-bar">
-        Create your company workspace before loading hosted CRM data.
+        Create your company workspace to load hosted data.
         <NuxtLink to="/setup">Set up company</NuxtLink>
       </div>
       <div v-else-if="data?.mode === 'demo'" class="notice-bar">
-        Running with demo data. Add Supabase keys to use your own open CRM database.
+        Running on demo data. Add Supabase keys to use your own database.
       </div>
       <MetricStrip :metrics="graph.metrics" />
       <GraphWorkspace

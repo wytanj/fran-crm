@@ -64,11 +64,7 @@ onMounted(async () => {
 
 <template>
   <div class="auth-page">
-    <LoadingPanel
-      v-if="confirming"
-      title="Checking your session"
-      detail="Confirming sign-in and loading workspace access."
-    />
+    <LoadingPanel v-if="confirming" title="Checking your session" />
     <section v-else class="auth-panel">
       <p class="eyebrow">Auth confirmed</p>
       <h2>{{ status }}</h2>

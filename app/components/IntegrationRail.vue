@@ -10,11 +10,15 @@ defineProps<{
   <section class="integration-rail">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">Hosted integration layer</p>
-        <h2>Connectors planned for paid workspaces</h2>
+        <p class="eyebrow">Source data</p>
+        <h2>Planned graph connectors</h2>
       </div>
       <Cable :size="20" />
     </div>
+    <p class="muted-text">
+      Import path only. Live POS loyalty is linked from SKUMS — see
+      <NuxtLink to="/integrations">Integrations</NuxtLink>.
+    </p>
     <div class="integration-list">
       <div v-for="item in items" :key="item">
         <CircleDashed :size="16" />

@@ -124,7 +124,7 @@ async function addField() {
       <div class="section-heading">
         <div>
           <p class="eyebrow">Profile packs</p>
-          <h2>Install vertical fields without changing the customer spine</h2>
+          <h2>Add vertical fields without touching the spine</h2>
         </div>
       </div>
 
@@ -166,7 +166,7 @@ async function addField() {
 
     <form class="schema-form" @submit.prevent="addField">
       <p class="eyebrow">Custom schema</p>
-      <h2>Add an agent-ready field</h2>
+      <h2>Add a field</h2>
       <label>
         <span>Field key</span>
         <input v-model="draft.key" type="text" placeholder="preferred_channel" pattern="[a-z][a-z0-9_]*" />

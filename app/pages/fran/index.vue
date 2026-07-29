@@ -9,70 +9,70 @@ const posRoutes = [
   {
     method: 'POST',
     path: '/fran/pos/member/resolve',
-    purpose: 'Resolve phone, member number, QR, barcode, or external references to a Fran person id.'
+    purpose: 'Resolve a phone, member number, QR, barcode, or external reference to a person id.'
   },
   {
     method: 'POST',
     path: '/fran/pos/counter-session',
-    purpose: 'Create the compact POS projection for member identity, loyalty, rewards, and safe beauty context.'
+    purpose: 'Build the counter projection for identity, loyalty, rewards, and safety context.'
   },
   {
     method: 'GET',
     path: '/api/fran/analytics',
-    purpose: 'Read aggregate tier mix, sign-up trends, and evaluation-cycle movement for one workspace.'
+    purpose: 'Read tier mix, sign-up trends, and cycle movement for one workspace.'
   },
   {
     method: 'GET',
     path: '/api/fran/loyalty/policy-versions/active',
-    purpose: 'Load the assigned policy bundle Fran POS should execute against a SKUMS basket quote.'
+    purpose: 'Load the policy bundle POS executes against a SKUMS basket quote.'
   },
   {
     method: 'GET',
     path: '/api/fran/loyalty/policy-versions',
-    purpose: 'List draft, testing, approved, active, and retired policy versions for operators.'
+    purpose: 'List draft, testing, approved, active, and retired versions.'
   },
   {
     method: 'POST',
     path: '/api/fran/loyalty/policy-versions',
-    purpose: 'Create a draft, testing, or approved loyalty policy version.'
+    purpose: 'Create a draft, testing, or approved policy version.'
   },
   {
     method: 'POST',
     path: '/api/fran/loyalty/policy-versions/[version_id]/publish',
-    purpose: 'Publish a policy version as the active default for its program.'
+    purpose: 'Publish a version as its program default.'
   },
   {
     method: 'POST',
     path: '/api/fran/loyalty/assignments',
-    purpose: 'Assign policy versions to a workspace default, store, register, member, cohort, or experiment.'
+    purpose: 'Assign a version to a workspace, store, register, member, cohort, or experiment.'
   },
   {
     method: 'POST',
     path: '/fran/pos/basket/preview',
-    purpose: 'Compatibility placeholder; final POS evaluation should run locally from policy bundle plus SKUMS quote.'
+    purpose: 'Placeholder. Evaluation runs locally from the policy bundle and SKUMS quote.'
   },
   {
     method: 'POST',
     path: '/fran/pos/rewards/quote',
-    purpose: 'Planned redemption validation before payment confirmation.'
+    purpose: 'Planned. Validate redemption before payment confirmation.'
   },
   {
     method: 'POST',
     path: '/fran/pos/rewards/commit',
-    purpose: 'Planned idempotent post-payment commit for points redemption.'
+    purpose: 'Planned. Idempotent points commit after payment.'
   },
   {
     method: 'POST',
     path: '/fran/pos/rewards/reverse',
-    purpose: 'Planned idempotent reversal for voids and reward rollback.'
+    purpose: 'Planned. Idempotent reversal for voids and reward rollback.'
   }
 ]
 
 const guardrails = [
-  { icon: ScanLine, label: 'POS reads compact decision routes, not raw graph tables.' },
-  { icon: ShieldCheck, label: 'Restricted fields stay filtered by backend projection logic.' },
-  { icon: RefreshCcw, label: 'Policy loading never mutates points; ledger commit and reverse are idempotent.' },
-  { icon: BadgeCheck, label: 'Fran POS executes assigned policy versions against SKUMS price and inventory truth.' },
+  { icon: ScanLine, label: 'POS reads decision routes, never raw graph tables.' },
+  { icon: ShieldCheck, label: 'Restricted fields stay filtered by backend projection.' },
+  { icon: RefreshCcw, label: 'Loading a policy never mutates points. Commit and reverse are idempotent.' },
+  { icon: BadgeCheck, label: 'POS executes assigned versions against SKUMS price and inventory truth.' },
   { icon: BarChart3, label: 'Analytics stay aggregate and workspace-scoped.' }
 ]
 </script>
@@ -81,8 +81,9 @@ const guardrails = [
   <div class="page-stack">
     <div class="intro-strip">
       <div>
-        <p class="eyebrow">Fran CRM</p>
-        <h2>Member identity, counter projection, loyalty policy, and reward decisions for Fran POS.</h2>
+        <p class="eyebrow">Fran POS</p>
+        <h2>Counter contracts</h2>
+        <p>Member identity, loyalty policy, and reward decisions the register calls at the counter.</p>
       </div>
       <Gift :size="24" />
     </div>
@@ -98,12 +99,12 @@ const guardrails = [
     <section class="capability-list">
       <div class="section-heading compact-heading">
         <div>
-          <p class="eyebrow">POS guardrails</p>
+          <p class="eyebrow">Guardrails</p>
           <h2>Operational boundaries</h2>
         </div>
       </div>
       <article v-for="guardrail in guardrails" :key="guardrail.label" class="capability-row">
-        <component :is="guardrail.icon" :size="18" />
+        <component :is="guardrail.icon" :size="17" />
         <span>{{ guardrail.label }}</span>
       </article>
     </section>
