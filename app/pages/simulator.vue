@@ -326,11 +326,13 @@ const findingBlurb = computed(() => {
             <label class="sim-field">
               <span>Basket total (SGD)</span>
               <input v-model.number="working.basket.grossSpend" type="number" min="0" step="0.01" @input="touch">
+              <small>What SKUMS priced the lines at, before any discount.</small>
             </label>
 
             <label class="sim-field">
               <span>SKUMS markdown</span>
               <input v-model.number="working.basket.lineDiscount" type="number" min="0" step="0.01" @input="touch">
+              <small>A shop-side price cut — promo or clearance. Not a points redemption.</small>
             </label>
 
             <label class="sim-field">
@@ -351,6 +353,7 @@ const findingBlurb = computed(() => {
                   {{ num(den.points) }} pts → {{ money(den.discount) }} off
                 </option>
               </select>
+              <small>Spends points for money off. The other kind of discount.</small>
             </label>
 
             <label class="sim-field">
@@ -437,14 +440,70 @@ const findingBlurb = computed(() => {
           </div>
 
           <p class="muted-text">
-            Basket {{ money(report.spend.gross) }} − markdown {{ money(report.spend.lineDiscount) }}
-            = {{ money(report.spend.eligible) }} eligible.
-            <template v-if="working.earnBasis === 'post_redeem' && report.redeem.discount > 0">
-              Earning after the {{ money(report.redeem.discount) }} points discount, so
-              {{ money(report.spend.earnBasisSpend) }} is multiplied.
+            A basket can carry two different discounts. Only one of them is loyalty's.
+          </p>
+
+          <div class="basket-walk">
+            <div class="walk-row">
+              <span>Basket total</span>
+              <em>What SKUMS priced the lines at</em>
+              <div class="walk-amount">
+                <b>{{ money(report.spend.gross) }}</b>
+              </div>
+            </div>
+
+            <div class="walk-row" :class="{ 'is-zero': !report.spend.lineDiscount }">
+              <span>SKUMS markdown</span>
+              <em>A shop-side price cut — a promo or a clearance price. SKUMS applies it before loyalty
+                ever sees the basket, and loyalty never re-prices it.</em>
+              <div class="walk-amount">
+                <b>−{{ money(report.spend.lineDiscount) }}</b>
+              </div>
+            </div>
+
+            <div class="walk-row is-subtotal">
+              <span>Eligible spend</span>
+              <em>The amount loyalty measures</em>
+              <div class="walk-amount">
+                <i v-if="report.capability.canEarn && working.earnBasis === 'pre_redeem'" class="walk-basis">
+                  earns points
+                </i>
+                <b>{{ money(report.spend.eligible) }}</b>
+              </div>
+            </div>
+
+            <div class="walk-row" :class="{ 'is-zero': !report.redeem.discount }">
+              <span>Points discount</span>
+              <em>A fixed denomination spent from the member's balance. Nothing to do with the
+                markdown — this one costs points.</em>
+              <div class="walk-amount">
+                <b>−{{ money(report.redeem.discount) }}</b>
+              </div>
+            </div>
+
+            <div class="walk-row is-subtotal">
+              <span>Customer pays</span>
+              <em>Tendered at the register</em>
+              <div class="walk-amount">
+                <i v-if="report.capability.canEarn && working.earnBasis === 'post_redeem'" class="walk-basis">
+                  earns points
+                </i>
+                <b>{{ money(report.tender.net) }}</b>
+              </div>
+            </div>
+          </div>
+
+          <p class="muted-text">
+            <template v-if="!report.capability.canEarn">
+              This session cannot earn, so no line is multiplied.
+            </template>
+            <template v-else-if="working.earnBasis === 'pre_redeem'">
+              Earn basis is <b>before discount</b>, so the multiplier is applied to eligible spend and
+              redeeming points does not reduce what the basket earns.
             </template>
             <template v-else>
-              Earning before any points discount, so the full eligible amount is multiplied.
+              Earn basis is <b>after discount</b>, so the points discount comes off first and the
+              multiplier is applied to what the customer actually pays.
             </template>
           </p>
         </section>

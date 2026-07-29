@@ -601,6 +601,11 @@ textarea {
 
 .page-stack {
   display: grid;
+  /* Explicit minmax(0, 1fr): an implicit `auto` track floors at min-content, so
+     one wide child (a long env key, a code block, a nowrap row) would prop every
+     page open on narrow screens and get clipped by overflow-x instead of
+     reflowing. Children that genuinely need width scroll inside their own box. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   padding: var(--space-6) var(--space-6) var(--space-8);
 }
@@ -1866,6 +1871,9 @@ textarea {
 
 .sim-main {
   display: grid;
+  /* An implicit `auto` column floors at min-content, which lets a wide child
+     (nowrap formula, dens table) overflow the container instead of reflowing. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   min-width: 0;
 }
@@ -1988,6 +1996,13 @@ textarea {
   font-weight: 600;
 }
 
+/* Plain-language hint under a control whose label is domain jargon. */
+.sim-field > small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
 .sim-field input,
 .sim-field select {
   width: 100%;
@@ -2096,6 +2111,78 @@ textarea {
 
 .sim-formula b {
   color: var(--teal-dark);
+}
+
+/* Basket walk-through — separates the shop-side markdown from the points
+   discount, and marks which line the multiplier is applied to. */
+.basket-walk {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.walk-row {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr) minmax(120px, auto);
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.walk-row:last-child {
+  border-bottom: 0;
+}
+
+.walk-row > span {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.walk-row > em {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.walk-amount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.walk-amount b {
+  font-size: var(--text-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.walk-basis {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: var(--text-2xs);
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.walk-row.is-subtotal {
+  background: var(--panel-strong);
+}
+
+/* A discount that is not in play stays legible but recedes. */
+.walk-row.is-zero > span,
+.walk-row.is-zero .walk-amount b {
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .sim-headline {
@@ -2866,9 +2953,15 @@ textarea {
   .two-column,
   .api-grid,
   .docs-card-grid,
-  .settings-grid,
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* minmax(0, 1fr), not 1fr: a bare `1fr` track floors at min-content, so a wide
+     child (a nowrap formula, a table) props the column open and the page is
+     clipped by overflow-x rather than reflowing. */
   .sim-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   /* Simulator: swap the sticky scenario list for a dropdown so the controls and
@@ -2907,6 +3000,21 @@ textarea {
     order: 1;
   }
 
+  /* Label and amount share a row; the explanation drops beneath both. */
+  .walk-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: var(--space-3);
+  }
+
+  .walk-row > em {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+
+  .walk-amount {
+    justify-content: flex-start;
+  }
+
   .node-cloud {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2924,7 +3032,7 @@ textarea {
   .tier-bar-row,
   .cycle-row,
   .env-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .tier-bar-row em {
@@ -2936,7 +3044,7 @@ textarea {
   }
 
   .docs-reader {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .docs-sidebar-panel,
@@ -2982,12 +3090,12 @@ textarea {
   }
 
   .node-cloud {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .sim-control-grid,
   .sim-stat-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .sim-field .segmented-control button,
