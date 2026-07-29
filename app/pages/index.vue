@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, BadgeCheck, Blocks, BookOpen, FileText, ShieldCheck, UserRound, Wrench } from '@lucide/vue'
+import { ArrowRight, BadgeCheck, Blocks, BookOpen, FileText, FlaskConical, ShieldCheck, UserRound, Wrench } from '@lucide/vue'
 </script>
 
 <template>
@@ -32,11 +32,16 @@ import { ArrowRight, BadgeCheck, Blocks, BookOpen, FileText, ShieldCheck, UserRo
       <article class="settings-panel">
         <div class="section-heading compact-heading">
           <div>
-            <p class="eyebrow">Reference</p>
-            <h2>Contracts</h2>
+            <p class="eyebrow">No sign-in needed</p>
+            <h2>Explore</h2>
           </div>
           <BookOpen :size="20" />
         </div>
+        <NuxtLink class="nav-link" to="/simulator">
+          <FlaskConical :size="17" />
+          <span>Loyalty simulator</span>
+          <ArrowRight :size="15" />
+        </NuxtLink>
         <NuxtLink class="nav-link" to="/docs/api">
           <FileText :size="17" />
           <span>Route contracts</span>

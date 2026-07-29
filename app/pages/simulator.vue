@@ -4,9 +4,8 @@ import { FWB_REDEEM_DENOMS, type FwbTierKey } from '#shared/fwb/constitution'
 import { SCENARIO_GROUPS, SCENARIOS, scenariosInGroup, type Scenario } from '#shared/fwb/scenarios'
 import { runSimulation, type EarnBasis, type SessionMode, type SimInput } from '#shared/fwb/simulate'
 
-definePageMeta({
-  middleware: 'authenticated-client'
-})
+// Deliberately public: the simulator reads no workspace data and commits nothing,
+// so it stays reachable without signing in.
 
 const selectedId = ref(SCENARIOS[0]!.id)
 const selected = computed<Scenario>(() => SCENARIOS.find((s) => s.id === selectedId.value) || SCENARIOS[0]!)

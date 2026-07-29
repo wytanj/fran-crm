@@ -26,9 +26,12 @@ type NavGroup = {
 
 const home: NavItem = { label: 'Home', to: '/', icon: LayoutDashboard }
 const docs: NavItem = { label: 'Docs', to: '/docs', icon: FileText }
+const simulator: NavItem = { label: 'Simulator', to: '/simulator', icon: FlaskConical }
 
+// The simulator is pure policy math with no workspace data, so it sits in the
+// signed-out nav alongside the docs.
 const publicGroups: NavGroup[] = [
-  { items: [home, docs] }
+  { items: [home, docs, simulator] }
 ]
 
 const memberGroups: NavGroup[] = [
@@ -37,7 +40,7 @@ const memberGroups: NavGroup[] = [
     label: 'Data',
     items: [
       { label: 'Analytics', to: '/analytics', icon: BarChart3 },
-      { label: 'Simulator', to: '/simulator', icon: FlaskConical }
+      simulator
     ]
   },
   {

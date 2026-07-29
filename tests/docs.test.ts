@@ -77,6 +77,19 @@ describe('agent documentation coverage', () => {
     expect(sidebar).toContain("to: '/settings'")
   })
 
+  it('keeps the loyalty simulator readable without signing in', () => {
+    const page = read('app/pages/simulator.vue')
+    const sidebar = read('app/components/AppSidebar.vue')
+    const landing = read('app/pages/index.vue')
+
+    // Pure policy math with no workspace data, so it must not sit behind auth.
+    expect(page).not.toContain("middleware: 'authenticated-client'")
+    expect(page).not.toContain('useCrmAuth')
+    // Reachable for signed-out visitors from both the nav and the landing page.
+    expect(sidebar).toContain('publicGroups: NavGroup[] = [\n  { items: [home, docs, simulator] }')
+    expect(landing).toContain('to="/simulator"')
+  })
+
   it('keeps every public documentation page backed by markdown', () => {
     const docsPages = ['index', 'api', 'fran-pos', 'agents', 'skills', 'model']
 
