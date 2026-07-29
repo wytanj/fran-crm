@@ -6,6 +6,7 @@ import {
   BarChart3,
   Database,
   FileText,
+  FlaskConical,
   GitFork,
   LayoutDashboard,
   LoaderCircle,
@@ -35,7 +36,8 @@ const memberGroups: NavGroup[] = [
   {
     label: 'Data',
     items: [
-      { label: 'Analytics', to: '/analytics', icon: BarChart3 }
+      { label: 'Analytics', to: '/analytics', icon: BarChart3 },
+      { label: 'Simulator', to: '/simulator', icon: FlaskConical }
     ]
   },
   {

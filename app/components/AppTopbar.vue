@@ -12,6 +12,7 @@ const pageTitle = computed(() => {
     '/': 'Home',
     '/graph': 'Customer graph',
     '/analytics': 'Analytics',
+    '/simulator': 'Loyalty simulator',
     '/schema': 'Schema',
     '/api-console': 'API',
     '/docs': 'Docs',

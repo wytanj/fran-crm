@@ -39,6 +39,13 @@
   --tier-3: #6b4a10;
   --chart-grid: #e4e9e2;
 
+  /* Earn multiplier components. Fixed order, never cycled; validated as a
+     4-slot categorical set (all-pairs) against #ffffff. */
+  --part-tier: #158f6a;
+  --part-birthday: #c25c0f;
+  --part-category: #9c3d9c;
+  --part-campaign: #2f6ecb;
+
   /* Type scale */
   --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
@@ -1844,6 +1851,474 @@ textarea {
   width: 10px;
   height: 10px;
   border-radius: 3px;
+}
+
+/* ==========================================================================
+   Loyalty simulator
+   ========================================================================== */
+
+.sim-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.sim-main {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.scenario-picker {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 108px);
+  overflow-y: auto;
+}
+
+.scenario-group + .scenario-group {
+  margin-top: var(--space-4);
+}
+
+.scenario-group > h3 {
+  margin: 0;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.scenario-group > p {
+  margin: 2px 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.scenario-item {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--text-base);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.scenario-item:hover {
+  background: var(--panel-sunken);
+  color: var(--ink);
+}
+
+.scenario-item.active {
+  border-color: #c9ddd7;
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+
+/* Teaching callout ------------------------------------------------------- */
+
+.teach-panel {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid #bbd8d2;
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: #edf7f4;
+}
+
+.teach-panel h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.teach-panel p {
+  margin: 0;
+  max-width: 76ch;
+  color: #2f4b47;
+  line-height: 1.55;
+}
+
+.teach-panel cite {
+  color: var(--teal-dark);
+  font-size: var(--text-xs);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Controls --------------------------------------------------------------- */
+
+.sim-control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+.sim-field {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.sim-field > span {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.sim-field input,
+.sim-field select {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.sim-field input:focus,
+.sim-field select:focus {
+  outline: 0;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
+}
+
+.sim-field .segmented-control {
+  width: 100%;
+}
+
+.sim-field .segmented-control button {
+  flex: 1;
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+}
+
+/* Multi-option segmented controls need two columns to avoid clipping labels. */
+.sim-field-wide {
+  grid-column: span 2;
+}
+
+.toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Multiplier stack ------------------------------------------------------- */
+
+.multiplier-bar {
+  display: flex;
+  gap: 2px;
+  overflow: hidden;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-sunken);
+}
+
+.multiplier-bar i {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  color: #ffffff;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.part-tier { background: var(--part-tier); }
+.part-birthday { background: var(--part-birthday); }
+.part-category { background: var(--part-category); }
+.part-campaign { background: var(--part-campaign); }
+
+.multiplier-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.multiplier-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.multiplier-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.multiplier-legend b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Formula ---------------------------------------------------------------- */
+
+.sim-formula {
+  overflow-x: auto;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+  color: var(--ink-soft);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.sim-formula b {
+  color: var(--teal-dark);
+}
+
+.sim-headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.sim-headline strong {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-headline span {
+  color: var(--muted);
+}
+
+/* Result stats ----------------------------------------------------------- */
+
+.sim-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.sim-stat {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+}
+
+.sim-stat span {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sim-stat strong {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-stat small {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sim-stat.is-changed strong {
+  color: var(--teal-dark);
+}
+
+/* Dens table ------------------------------------------------------------- */
+
+.dens-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dens-table th,
+.dens-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dens-table th {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.dens-table td {
+  font-size: var(--text-sm);
+}
+
+.dens-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.dens-table tr.is-locked td {
+  color: var(--muted);
+}
+
+.dens-table tr.is-selected td {
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+
+/* Warnings --------------------------------------------------------------- */
+
+.sim-warnings {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sim-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid #ddc98f;
+  border-radius: var(--radius);
+  background: var(--gold-tint);
+  color: var(--gold-ink);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.sim-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+/* Campaign window rows --------------------------------------------------- */
+
+.campaign-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+}
+
+.campaign-row.is-dropped {
+  opacity: 0.62;
+}
+
+.campaign-row strong {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.campaign-row small {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.campaign-row em {
+  font-style: normal;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Findings --------------------------------------------------------------- */
+
+.finding-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.finding {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+}
+
+.finding-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.finding-head strong {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.finding p {
+  margin: 0;
+  max-width: 88ch;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.finding code {
+  padding: 1px var(--space-1);
+  border-radius: 4px;
+  background: var(--panel-sunken);
+  color: #173f3a;
+  font-size: 0.9em;
+}
+
+.impact-pill {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.impact-correctness {
+  background: var(--coral-tint);
+  color: var(--coral-ink);
+}
+
+.impact-guardrail {
+  background: var(--gold-tint);
+  color: var(--gold-ink);
+}
+
+.impact-clarity {
+  background: var(--teal-tint);
+  color: var(--teal-dark);
 }
 
 /* ==========================================================================
