@@ -84,64 +84,139 @@ function partWidth(value: number) {
   return Math.max(6, (value / total) * 100)
 }
 
-const findings = [
+type FindingKind = 'code' | 'policy'
+
+interface Finding {
+  title: string
+  /** `code` is a defect in the implementation; `policy` is a decision the constitution has not made. */
+  kind: FindingKind
+  impact: 'correctness' | 'guardrail' | 'clarity'
+  impactLabel: string
+  body: string
+  /** File reference for code findings; the open question for policy ones. */
+  ref: string
+}
+
+const findings: Finding[] = [
   {
     title: 'The POS bundle describes additive adds as multipliers',
+    kind: 'code',
     impact: 'correctness',
     impactLabel: 'Correctness',
     body: 'The policy bundle sent to registers carries `bonuses.birthdayMultiplier: 2` and `categoryMultipliers[].multiplier: 2`, but the engine adds +1.00 to the rate. A register that reads those fields by their names multiplies instead of adding: a Tier 3 birthday basket of $100 becomes 1.5 × 2 = 300 points rather than the correct 1.5 + 1 = 250, and the Tier 2 birthday-plus-category case in this pack becomes 1.25 × 2 × 2 = 500 rather than 325. Renaming them to `birthdayAdd` / `categoryAdd` with value 1.00 would make the wire format say what the math actually does.',
-    where: 'server/fran/loyalty/pos-policy-bundle.ts:203-215'
+    ref: 'server/fran/loyalty/pos-policy-bundle.ts:203-215'
   },
   {
     title: 'Campaign adds are silently dropped on settlement',
+    kind: 'code',
     impact: 'correctness',
     impactLabel: 'Correctness',
     body: '`settleFwbSale` recomputes points when the caller omits `pointsEarned`, but its call to `computeFwbEarnPoints` passes only tier, birthday and category — never `campaignAdds`. Any commit that trusts the engine to recompute loses every live campaign. This simulator sidesteps it by always passing `pointsEarned` explicitly, which is also what POS does, so the gap stays invisible until something else relies on the recompute path.',
-    where: 'shared/fwb/constitution.ts — settleFwbSale earn recompute'
+    ref: 'shared/fwb/constitution.ts — settleFwbSale earn recompute'
   },
   {
     title: 'Over-redemption is clamped instead of rejected',
+    kind: 'code',
     impact: 'guardrail',
     impactLabel: 'Guardrail',
     body: 'Asking to redeem more points than the member holds logs a warning and quietly reduces the redemption to the available balance. Because denominations are fixed, a clamp hands over a discount the member did not have the points for — 900 points requested against a 700 balance still books the redeem leg. Rejecting is the safer default; the simulator refuses it at the counter layer before the engine ever sees it.',
-    where: 'shared/fwb/constitution.ts — settleFwbSale redeem clamp'
+    ref: 'shared/fwb/constitution.ts — settleFwbSale redeem clamp'
   },
   {
     title: 'Non-denomination redemptions are recorded anyway',
+    kind: 'code',
     impact: 'guardrail',
     impactLabel: 'Guardrail',
     body: 'A request for 750 points fails `isValidFwbRedeemDenom`, adds a warning, and then books as an "adjust-style redeem". That is the one thing the brief\'s anti-goals rule out — inventing a conversion outside the fixed table. It should be a hard error at the ledger boundary, not a note attached to a committed entry.',
-    where: 'shared/fwb/constitution.ts — settleFwbSale denomination check'
+    ref: 'shared/fwb/constitution.ts — settleFwbSale denomination check'
   },
   {
     title: 'Nothing caps how far campaigns can stack',
+    kind: 'policy',
     impact: 'guardrail',
     impactLabel: 'Guardrail',
-    body: 'Campaign adds are summed with no ceiling, and the bundle\'s `maximumPointsPerBasket` is null and unenforced. Three concurrent +1.00 campaigns put a Tier 3 member at 4.50× — the "Three campaigns at once" scenario shows a $100 basket paying 400 points, roughly $28 of liability. Before marketers can self-serve campaigns, the policy needs a maximum total multiplier and a per-basket points cap.',
-    where: 'server/fran/loyalty/pos-policy-bundle.ts — redemption.maximumPointsPerBasket'
+    body: 'Campaign adds are summed with no ceiling. The "Three campaigns at once" scenario puts a Tier 3 member at 4.00×, paying 400 points on a $100 basket — roughly $28 of liability on a $100 sale. The bundle has a `maximumPointsPerBasket` field but it is null and nothing reads it. Before marketers can self-serve campaigns, someone has to pick the ceiling.',
+    ref: 'What is the maximum total multiplier, and the maximum points a single basket may earn?'
   },
   {
     title: 'Earn basis is a policy decision with no policy field',
+    kind: 'policy',
     impact: 'correctness',
     impactLabel: 'Correctness',
-    body: 'The bundle hardcodes `earn.basis: "post_discount"`, which describes SKUMS markdowns — it says nothing about whether the points discount itself reduces the earning base. The two answers differ by 45 points on the brief\'s own worked example, and the simulator exposes both. Until one is written into the policy version, POS preview and CRM settlement can disagree without either being wrong.',
-    where: 'server/fran/loyalty/pos-policy-bundle.ts:179-185'
+    body: 'The bundle hardcodes `earn.basis: "post_discount"`, which describes SKUMS markdowns — it says nothing about whether the points discount itself reduces the earning base. The two answers differ by 45 points on the brief\'s own worked example, and both scenarios are in this pack. Until one is written into the policy version, POS preview and CRM settlement can disagree without either being wrong.',
+    ref: 'Does redeeming points reduce the spend that earns points on the same basket?'
   },
   {
     title: 'Calendar YTD never resets at the year boundary',
+    kind: 'code',
     impact: 'correctness',
     impactLabel: 'Correctness',
     body: 'Tier is derived from `calendarYtdSpend`, which only ever accumulates — settlement adds to it and nothing subtracts. Tiers are defined on a calendar year, so without a 1 Jan reset every member ratchets permanently upward and the Jan 1 job in the brief has nothing to downgrade. `applyJan1ExpiryOnTierDrop` exists for the expiry half; the spend-window half is missing.',
-    where: 'shared/fwb/constitution.ts — settleFwbSale YTD accumulation'
+    ref: 'shared/fwb/constitution.ts — settleFwbSale YTD accumulation'
   },
   {
     title: 'Expiry freeze is captured at earn time, not current tier',
+    kind: 'code',
     impact: 'clarity',
     impactLabel: 'Clarity',
     body: 'A batch records `frozen` from the tier the member held when the points were earned. The constitution says F2/F3 freeze the clock *while in tier*, which is a property of the member today, not of the batch\'s birthday. A member upgrading F1 → F2 in March leaves January\'s batches unfrozen until the next Jan 1 pass rewrites them.',
-    where: 'shared/fwb/constitution.ts — settleFwbSale batch freeze'
+    ref: 'shared/fwb/constitution.ts — settleFwbSale batch freeze'
+  },
+  {
+    title: 'A redemption can be worth more than the basket',
+    kind: 'policy',
+    impact: 'guardrail',
+    impactLabel: 'Guardrail',
+    body: 'Nothing checks the discount against the basket. Redeeming 2500 points for $175 off a $20 basket takes the tender to zero and destroys about $155 of member value — reproduce it by setting the basket to 20 and picking the 2500 pt denomination. The member is the one harmed, so this surfaces as complaints rather than shrinkage. A minimum basket per denomination, or capping the discount at the basket total, would close it.',
+    ref: 'Should a denomination be blocked when its discount exceeds the basket, or capped to it?'
+  },
+  {
+    title: 'The downgrade path is undefined',
+    kind: 'policy',
+    impact: 'clarity',
+    impactLabel: 'Clarity',
+    body: 'The brief specifies what a Jan 1 drop does to points, but not how a member reaches it. A Tier 3 member who spends $300 the following year — does the tier fall on 1 Jan, at the first sale of the new year, or after a grace window? Tier drives the earn rate a cashier reads aloud at the counter, so the answer is visible to customers and needs stating before the job is written.',
+    ref: 'When exactly does a tier fall, and is there a grace period?'
+  },
+  {
+    title: 'The denomination ladder rewards hoarding',
+    kind: 'policy',
+    impact: 'clarity',
+    impactLabel: 'Clarity',
+    body: 'Value per point runs 0.030 at the 200 pt denomination to 0.070 at 2500 — a member who waits gets 2.3× the value of one who redeems early. That pushes balances upward, and outstanding points are liability the business carries. If the ladder is meant to drive retention it is working as designed; if the steepness is incidental, it is quietly growing the balance sheet.',
+    ref: 'Is the 2.3× spread between the smallest and largest denomination intentional?'
   }
 ]
+
+const findingFilters: Array<{ value: 'all' | FindingKind, label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'code', label: 'Code' },
+  { value: 'policy', label: 'Policy' }
+]
+
+const findingFilter = ref<'all' | FindingKind>('all')
+
+const findingCounts = computed(() => ({
+  all: findings.length,
+  code: findings.filter((f) => f.kind === 'code').length,
+  policy: findings.filter((f) => f.kind === 'policy').length
+}))
+
+const visibleFindings = computed(() =>
+  findingFilter.value === 'all'
+    ? findings
+    : findings.filter((f) => f.kind === findingFilter.value)
+)
+
+const findingBlurb = computed(() => {
+  if (findingFilter.value === 'code') {
+    return 'Defects in the implementation. Each one is a change to make in a file.'
+  }
+  if (findingFilter.value === 'policy') {
+    return 'Questions the constitution has not answered. Each one needs a decision before code can enforce it.'
+  }
+  return 'Gaps found while building these scenarios against the live engine. Code findings are defects to fix; policy findings are decisions still to be made.'
+})
 </script>
 
 <template>
@@ -159,6 +234,20 @@ const findings = [
     </div>
 
     <section class="sim-layout">
+      <!-- Small screens get a dropdown instead of a 17-row list above the content. -->
+      <div class="scenario-select">
+        <label class="sim-field">
+          <span>Scenario</span>
+          <select v-model="selectedId">
+            <optgroup v-for="group in SCENARIO_GROUPS" :key="group.key" :label="group.label">
+              <option v-for="scenario in scenariosInGroup(group.key)" :key="scenario.id" :value="scenario.id">
+                {{ scenario.title }}
+              </option>
+            </optgroup>
+          </select>
+        </label>
+      </div>
+
       <aside class="settings-panel scenario-picker" aria-label="Scenarios">
         <div class="section-heading compact-heading">
           <div>
@@ -533,22 +622,42 @@ const findings = [
       <div class="section-heading">
         <div>
           <p class="eyebrow">Findings</p>
-          <h2>Where the policy could be tightened</h2>
+          <h2>Where this could be tightened</h2>
+        </div>
+        <div class="segmented-control" role="group" aria-label="Filter findings">
+          <button
+            v-for="filter in findingFilters"
+            :key="filter.value"
+            type="button"
+            :class="{ active: findingFilter === filter.value }"
+            :aria-pressed="findingFilter === filter.value"
+            @click="findingFilter = filter.value"
+          >
+            {{ filter.label }} ({{ findingCounts[filter.value] }})
+          </button>
         </div>
       </div>
-      <p class="muted-text">
-        Gaps found while building these scenarios against the live engine. Nothing here is fixed — each
-        one is a decision for whoever owns the constitution.
-      </p>
+      <p class="muted-text">{{ findingBlurb }}</p>
 
       <div class="finding-list">
-        <article v-for="finding in findings" :key="finding.title" class="finding">
+        <article
+          v-for="finding in visibleFindings"
+          :key="finding.title"
+          class="finding"
+          :class="`finding-${finding.kind}`"
+        >
           <div class="finding-head">
+            <span class="kind-pill" :class="`kind-${finding.kind}`">
+              {{ finding.kind === 'code' ? 'Code' : 'Policy' }}
+            </span>
             <strong>{{ finding.title }}</strong>
             <span class="impact-pill" :class="`impact-${finding.impact}`">{{ finding.impactLabel }}</span>
           </div>
           <p>{{ finding.body }}</p>
-          <p><code>{{ finding.where }}</code></p>
+          <p class="finding-ref">
+            <span>{{ finding.kind === 'code' ? 'Where' : 'Decision needed' }}</span>
+            <code>{{ finding.ref }}</code>
+          </p>
         </article>
       </div>
     </section>

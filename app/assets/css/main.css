@@ -1870,6 +1870,16 @@ textarea {
   min-width: 0;
 }
 
+/* Replaced by the sticky list panel above the mobile breakpoint. */
+.scenario-select {
+  display: none;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
 .scenario-picker {
   position: sticky;
   top: 84px;
@@ -2274,12 +2284,54 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2) var(--space-3);
 }
 
 .finding-head strong {
   font-size: var(--text-md);
   font-weight: 600;
+}
+
+/* A code defect and an open policy question read differently at a glance. */
+.finding-code {
+  border-left: 3px solid var(--part-campaign);
+}
+
+.finding-policy {
+  border-left: 3px solid var(--part-category);
+}
+
+.kind-pill {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kind-code {
+  background: var(--part-campaign);
+}
+
+.kind-policy {
+  background: var(--part-category);
+}
+
+.finding-ref {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.finding-ref > span {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
 .finding p {
@@ -2814,8 +2866,45 @@ textarea {
   .two-column,
   .api-grid,
   .docs-card-grid,
-  .settings-grid {
+  .settings-grid,
+  .sim-layout {
     grid-template-columns: 1fr;
+  }
+
+  /* Simulator: swap the sticky scenario list for a dropdown so the controls and
+     result are not buried under 17 rows of navigation. */
+  .scenario-select {
+    display: block;
+  }
+
+  .scenario-picker {
+    display: none;
+  }
+
+  .sim-field-wide {
+    grid-column: auto;
+  }
+
+  .sim-control-grid,
+  .sim-stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .sim-headline strong {
+    font-size: var(--text-xl);
+  }
+
+  .teach-panel {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .finding {
+    padding: var(--space-3);
+  }
+
+  .finding-head strong {
+    flex: 1 1 100%;
+    order: 1;
   }
 
   .node-cloud {
@@ -2894,5 +2983,19 @@ textarea {
 
   .node-cloud {
     grid-template-columns: 1fr;
+  }
+
+  .sim-control-grid,
+  .sim-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-field .segmented-control button,
+  .finding-head .impact-pill {
+    font-size: var(--text-2xs);
+  }
+
+  .multiplier-bar {
+    height: 28px;
   }
 }
