@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Building2, CheckCircle2, LoaderCircle, UserRound } from '@lucide/vue'
 import type { WorkspaceSetupPayload } from '~/types/crm'
+import type { PendingCrmInvite } from '~/composables/useCrmWorkspaceInvites'
 
 definePageMeta({
   middleware: 'authenticated-client'
@@ -8,6 +9,7 @@ definePageMeta({
 
 const { isConfigured, refreshSession, signInWithGoogle, startAuthListener, user } = useCrmAuth()
 const { createWorkspace, error, loadWorkspaces, pending, primaryWorkspace } = useCrmWorkspaceAccess()
+const { acceptInvite, listMyPending } = useCrmWorkspaceInvites()
 
 const form = reactive<WorkspaceSetupPayload>({
   companyName: '',
@@ -19,6 +21,11 @@ const creatingWorkspace = ref(false)
 const googlePending = ref(false)
 const authError = ref('')
 const slugEdited = ref(false)
+const pendingInvites = ref<PendingCrmInvite[]>([])
+const loadingInvites = ref(false)
+const showCreateForm = ref(false)
+const joining = ref(false)
+const joinError = ref('')
 
 const mustSignIn = computed(() => isConfigured.value && !user.value)
 const submitLabel = computed(() => {
@@ -84,6 +91,24 @@ function fillSuggestedCompany() {
   form.slug = normalizeSlug(suggestedName)
 }
 
+async function loadPendingInvites() {
+  if (!user.value) {
+    pendingInvites.value = []
+    showCreateForm.value = true
+    return
+  }
+  loadingInvites.value = true
+  joinError.value = ''
+  try {
+    pendingInvites.value = await listMyPending()
+    showCreateForm.value = pendingInvites.value.length === 0
+  } catch {
+    showCreateForm.value = true
+  } finally {
+    loadingInvites.value = false
+  }
+}
+
 onMounted(async () => {
   startAuthListener()
   await refreshSession()
@@ -97,10 +122,16 @@ onMounted(async () => {
     form.slug = primaryWorkspace.value.slug
   } else {
     fillSuggestedCompany()
+    await loadPendingInvites()
   }
 })
 
-watch(user, fillSuggestedCompany)
+watch(user, async () => {
+  fillSuggestedCompany()
+  if (user.value && !primaryWorkspace.value) {
+    await loadPendingInvites()
+  }
+})
 
 watch(() => form.companyName, (companyName) => {
   if (!slugEdited.value || !form.slug) {
@@ -129,6 +160,20 @@ async function continueWithGoogle() {
     authError.value = signInError instanceof Error ? signInError.message : 'Unable to start Google sign-in.'
   } finally {
     googlePending.value = false
+  }
+}
+
+async function joinInvite(inv: PendingCrmInvite) {
+  joining.value = true
+  joinError.value = ''
+  try {
+    await acceptInvite(inv.token)
+    await loadWorkspaces()
+    await navigateTo('/graph')
+  } catch (e) {
+    joinError.value = e instanceof Error ? e.message : 'Failed to join workspace'
+  } finally {
+    joining.value = false
   }
 }
 
@@ -163,14 +208,18 @@ async function submitSetup() {
     <div class="intro-strip">
       <div>
         <p class="eyebrow">Company setup</p>
-        <h2>Create your company workspace</h2>
-        <p>Required before adding users, agents, or integrations.</p>
+        <h2 v-if="pendingInvites.length && !primaryWorkspace">Join your team</h2>
+        <h2 v-else>Create your company workspace</h2>
+        <p v-if="pendingInvites.length && !primaryWorkspace">
+          Accept an invite to Fran CRM. Prefer this over creating a second workspace.
+        </p>
+        <p v-else>Required before adding users, agents, or integrations (founders only after seed).</p>
       </div>
       <Building2 :size="24" />
     </div>
 
     <section class="setup-grid">
-      <form class="settings-panel setup-form" @submit.prevent="submitSetup">
+      <div class="settings-panel setup-form">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Master workspace</p>
@@ -183,7 +232,7 @@ async function submitSetup() {
         </div>
 
         <LoadingPanel
-          v-else-if="pending || creatingWorkspace"
+          v-else-if="pending || creatingWorkspace || loadingInvites"
           :title="workspaceLoadingTitle"
           :detail="workspaceLoadingDetail"
           compact
@@ -201,32 +250,66 @@ async function submitSetup() {
           </div>
         </div>
 
-        <label>
-          <span>Company name</span>
-          <input v-model="form.companyName" type="text" placeholder="Acme Retail" required />
-        </label>
-        <label>
-          <span>Workspace slug</span>
-          <input v-model="form.slug" type="text" placeholder="acme-retail" pattern="[a-z0-9]+(-[a-z0-9]+)*" @input="handleSlugInput" />
-        </label>
-        <label>
-          <span>Workspace mode</span>
-          <select v-model="form.plan">
-            <option value="hosted_growth">Fran Workspace</option>
-            <option value="hosted_scale">Fran Scale</option>
-          </select>
-        </label>
+        <template v-if="!mustSignIn && !primaryWorkspace && !loadingInvites">
+          <div v-if="pendingInvites.length" class="space-stack">
+            <article v-for="inv in pendingInvites" :key="inv.id" class="notice-bar">
+              <strong>{{ inv.workspace_name }}</strong>
+              <span class="muted-text capitalize"> · {{ inv.role }}</span>
+              <div class="setup-auth-actions" style="margin-top: 0.75rem">
+                <button class="primary-button" type="button" :disabled="joining" @click="joinInvite(inv)">
+                  {{ joining ? 'Joining…' : `Join ${inv.workspace_name}` }}
+                </button>
+              </div>
+            </article>
+            <p v-if="joinError" class="form-error">{{ joinError }}</p>
+            <button
+              v-if="!showCreateForm"
+              type="button"
+              class="secondary-button"
+              @click="showCreateForm = true"
+            >
+              Create a new workspace instead
+            </button>
+          </div>
 
-        <button class="primary-button" type="submit" :disabled="pending || creatingWorkspace || mustSignIn">
-          <LoaderCircle v-if="pending || creatingWorkspace" class="button-spinner" :size="17" aria-hidden="true" />
-          <CheckCircle2 v-else :size="17" />
-          <span>{{ submitLabel }}</span>
-        </button>
+          <form v-if="showCreateForm || !pendingInvites.length" class="space-stack" @submit.prevent="submitSetup">
+            <p v-if="pendingInvites.length" class="muted-text">
+              Creating a new workspace starts a separate CRM tenant. Prefer joining if you were invited.
+            </p>
+            <label>
+              <span>Company name</span>
+              <input v-model="form.companyName" type="text" placeholder="Fran" required />
+            </label>
+            <label>
+              <span>Workspace slug</span>
+              <input v-model="form.slug" type="text" placeholder="fran" pattern="[a-z0-9]+(-[a-z0-9]+)*" @input="handleSlugInput" />
+            </label>
+            <label>
+              <span>Workspace mode</span>
+              <select v-model="form.plan">
+                <option value="hosted_growth">Fran Workspace</option>
+                <option value="hosted_scale">Fran Scale</option>
+              </select>
+            </label>
 
-        <p v-if="created" class="notice-text">Workspace created.</p>
-        <p v-if="authError" class="form-error">{{ authError }}</p>
-        <p v-if="error" class="form-error">{{ error }}</p>
-      </form>
+            <button class="primary-button" type="submit" :disabled="pending || creatingWorkspace || mustSignIn">
+              <LoaderCircle v-if="pending || creatingWorkspace" class="button-spinner" :size="17" aria-hidden="true" />
+              <CheckCircle2 v-else :size="17" />
+              <span>{{ submitLabel }}</span>
+            </button>
+
+            <p v-if="created" class="notice-text">Workspace created.</p>
+            <p v-if="authError" class="form-error">{{ authError }}</p>
+            <p v-if="error" class="form-error">{{ error }}</p>
+          </form>
+        </template>
+
+        <div v-if="primaryWorkspace" class="setup-auth-actions">
+          <button class="primary-button" type="button" @click="navigateTo('/graph')">
+            Open company workspace
+          </button>
+        </div>
+      </div>
 
       <section class="settings-panel setup-checklist">
         <p class="eyebrow">Created on setup</p>
@@ -241,3 +324,10 @@ async function submitSetup() {
     </section>
   </div>
 </template>
+
+<style scoped>
+.space-stack {
+  display: grid;
+  gap: 1rem;
+}
+</style>

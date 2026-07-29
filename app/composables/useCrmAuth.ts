@@ -36,6 +36,11 @@ export function useCrmAuth() {
     return browserSupabaseClient
   }
 
+  /** Shared browser Supabase client (user JWT session). */
+  function getSupabase() {
+    return getClient()
+  }
+
   function startAuthListener() {
     const client = getClient()
 

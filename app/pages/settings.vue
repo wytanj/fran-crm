@@ -8,8 +8,10 @@ import {
   KeyRound,
   PlugZap,
   Store,
-  Upload
+  Upload,
+  UserPlus
 } from '@lucide/vue'
+import type { CrmInviteRole, CrmWorkspaceInvite } from '~/composables/useCrmWorkspaceInvites'
 
 definePageMeta({
   middleware: 'authenticated-client'
@@ -18,9 +20,89 @@ definePageMeta({
 const runtime = useRuntimeConfig()
 const { isConfigured, refreshSession, startAuthListener, user } = useCrmAuth()
 const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
+const {
+  createInvite,
+  inviteUrl,
+  listInvites,
+  listMembers,
+  revokeInvite
+} = useCrmWorkspaceInvites()
 
 const copyNotice = ref('')
 let copyTimer: ReturnType<typeof setTimeout> | null = null
+
+const members = ref<Array<{ user_id: string; role: string; created_at: string }>>([])
+const invites = ref<CrmWorkspaceInvite[]>([])
+const teamLoading = ref(false)
+const teamError = ref('')
+const inviteEmail = ref('')
+const inviteRole = ref<CrmInviteRole>('member')
+const inviteBusy = ref(false)
+
+const canManageTeam = computed(() => {
+  const role = primaryWorkspace.value?.role
+  return role === 'owner' || role === 'admin'
+})
+
+async function loadTeam() {
+  if (!primaryWorkspace.value?.id || !user.value) {
+    members.value = []
+    invites.value = []
+    return
+  }
+  teamLoading.value = true
+  teamError.value = ''
+  try {
+    ;[members.value, invites.value] = await Promise.all([listMembers(), listInvites()])
+  } catch (e) {
+    teamError.value = e instanceof Error ? e.message : 'Failed to load team'
+  } finally {
+    teamLoading.value = false
+  }
+}
+
+async function handleCreateInvite() {
+  if (!inviteEmail.value.trim()) return
+  inviteBusy.value = true
+  teamError.value = ''
+  try {
+    const inv = await createInvite(inviteEmail.value, inviteRole.value)
+    const url = inviteUrl(inv.token)
+    try {
+      await navigator.clipboard.writeText(url)
+      copyNotice.value = `Invite created for ${inv.email}. Link copied.`
+    } catch {
+      copyNotice.value = `Invite created for ${inv.email}. Copy link from the list.`
+    }
+    inviteEmail.value = ''
+    inviteRole.value = 'member'
+    await loadTeam()
+  } catch (e) {
+    teamError.value = e instanceof Error ? e.message : 'Failed to create invite'
+  } finally {
+    inviteBusy.value = false
+  }
+}
+
+async function handleCopyInvite(token: string) {
+  try {
+    await navigator.clipboard.writeText(inviteUrl(token))
+    copyNotice.value = 'Invite link copied'
+  } catch {
+    teamError.value = 'Could not copy link'
+  }
+}
+
+async function handleRevokeInvite(id: string) {
+  if (!confirm('Revoke this invite?')) return
+  try {
+    await revokeInvite(id)
+    await loadTeam()
+    copyNotice.value = 'Invite revoked'
+  } catch (e) {
+    teamError.value = e instanceof Error ? e.message : 'Failed to revoke'
+  }
+}
 
 const envRows = [
   { key: 'NUXT_PUBLIC_SUPABASE_URL', value: runtime.public.supabaseUrl || 'not set' },
@@ -91,11 +173,19 @@ onMounted(async () => {
   await refreshSession()
   if (user.value || !isConfigured.value) {
     await loadWorkspaces()
+    await loadTeam()
   }
 })
 
 watch(user, async (next) => {
-  if (next) await loadWorkspaces()
+  if (next) {
+    await loadWorkspaces()
+    await loadTeam()
+  }
+})
+
+watch(primaryWorkspace, async (ws) => {
+  if (ws?.id) await loadTeam()
 })
 
 async function copyText(value: string, label: string) {
@@ -166,6 +256,72 @@ async function copyText(value: string, label: string) {
           <p class="muted-text">
             Covers workspace membership, graph entities, profile packs, loyalty analytics, point batches, MCP logs, and audit events.
           </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Team invites -->
+    <section class="settings-panel integration-segment" aria-labelledby="settings-team">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Team</p>
+          <h2 id="settings-team">Members & invites</h2>
+          <p class="muted-text">
+            Invite people to this CRM workspace with Google sign-in (same email). Prefer invites over creating a second company.
+          </p>
+        </div>
+        <UserPlus :size="20" />
+      </div>
+
+      <p v-if="teamError" class="form-error">{{ teamError }}</p>
+      <p v-if="teamLoading" class="muted-text">Loading team…</p>
+
+      <form
+        v-if="canManageTeam && primaryWorkspace"
+        class="integration-id-panel"
+        @submit.prevent="handleCreateInvite"
+      >
+        <div class="env-row">
+          <strong>Invite email</strong>
+          <input v-model="inviteEmail" type="email" class="input-field" required placeholder="colleague@gmail.com" />
+          <select v-model="inviteRole" class="input-field" style="max-width: 8rem">
+            <option value="member">member</option>
+            <option value="admin">admin</option>
+            <option value="agent">agent</option>
+          </select>
+        </div>
+        <button class="primary-button" type="submit" :disabled="inviteBusy || !inviteEmail.trim()">
+          {{ inviteBusy ? 'Creating…' : 'Invite + copy link' }}
+        </button>
+      </form>
+      <p v-else-if="primaryWorkspace" class="muted-text">Only owners and admins can invite members.</p>
+      <p v-else class="muted-text">
+        <NuxtLink to="/setup">Join or create a company</NuxtLink> first.
+      </p>
+
+      <div v-if="members.length" class="connector-table">
+        <article v-for="m in members" :key="m.user_id" class="connector-row">
+          <CheckCircle2 :size="18" />
+          <div>
+            <strong class="font-mono text-sm">{{ m.user_id.slice(0, 8) }}…</strong>
+            <p class="capitalize">{{ m.role }}</p>
+          </div>
+          <span class="status-pill" data-status="available">member</span>
+        </article>
+      </div>
+
+      <div v-if="invites.length" class="connector-table">
+        <p class="muted-text">Pending invites</p>
+        <article v-for="inv in invites" :key="inv.id" class="connector-row">
+          <Clock3 :size="18" />
+          <div>
+            <strong>{{ inv.email }}</strong>
+            <p class="capitalize">{{ inv.role }} · expires {{ new Date(inv.expires_at).toLocaleDateString() }}</p>
+          </div>
+          <span class="integration-segment-actions">
+            <button type="button" class="secondary-button" @click="handleCopyInvite(inv.token)">Copy link</button>
+            <button type="button" class="secondary-button" @click="handleRevokeInvite(inv.id)">Revoke</button>
+          </span>
         </article>
       </div>
     </section>
