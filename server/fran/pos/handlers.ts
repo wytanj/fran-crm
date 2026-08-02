@@ -13,6 +13,13 @@ import {
 import { demoCrmGraph } from '../../utils/demo-crm'
 import { createCounterProfile, profilePackDefinitions, readProfileValues } from '../../utils/profile-packs'
 import { normalizeFwbTierKey, fwbTierRateFromKey, FWB_TIER_THRESHOLDS_SGD } from '../loyalty/fwb-engine'
+import {
+  findPersonByIdAuto,
+  hasDurableCrmBackend,
+  registerPosMemberAuto,
+  resolvePosMemberAuto,
+  type RegistryPerson
+} from './member-registry'
 
 const DEMO_WORKSPACE = '11111111-1111-4111-8111-111111111111'
 
@@ -118,6 +125,55 @@ function parseCounterSessionBody(raw: unknown): FranCounterSessionPayload & {
 
 export async function handleFranMemberResolve(event: Parameters<typeof readBody>[0]) {
   const body = parseMemberResolveBody(await readBody(event))
+  const workspaceId = body.workspaceId
+
+  // Durable resolve when backend available and workspace is a real UUID (not only demo graph)
+  if (hasDurableCrmBackend() && isUuid(workspaceId)) {
+    try {
+      const people = await resolvePosMemberAuto(workspaceId, body.identifier)
+      if (people.length === 1) {
+        const person = people[0]!
+        const resolved = {
+          status: 'exact' as const,
+          personId: person.id,
+          memberRef: person.memberNumber,
+          candidates: [] as FranMemberCandidate[],
+          warnings: [] as string[]
+        }
+        if (wantsPosShape(event)) {
+          return toPosMemberResolutionFromEntities([person.entity], body, 'supabase')
+        }
+        return { mode: 'supabase' as const, ...resolved }
+      }
+      if (people.length > 1) {
+        const resolved = {
+          status: 'ambiguous' as const,
+          personId: null as string | null,
+          memberRef: null as string | null,
+          candidates: people.map((p) => ({
+            personId: p.id,
+            displayName: p.label,
+            memberRef: p.memberNumber,
+            mobile: p.phone
+          })),
+          warnings: ['Multiple members matched the supplied identifier.']
+        }
+        if (wantsPosShape(event)) {
+          return toPosMemberResolutionFromEntities(
+            people.map((p) => p.entity),
+            body,
+            'supabase'
+          )
+        }
+        return { mode: 'supabase' as const, ...resolved }
+      }
+      // none in DB — still fall through to demo aliases for FRAN-0001 etc. on demo workspace only
+    } catch (e: any) {
+      // fall through to demo
+      console.warn('[fran-pos] durable member resolve failed', e?.message || e)
+    }
+  }
+
   const resolved = resolveFranMember(body)
 
   if (wantsPosShape(event)) {
@@ -132,6 +188,7 @@ export async function handleFranMemberResolve(event: Parameters<typeof readBody>
 
 export async function handleFranCounterSession(event: Parameters<typeof readBody>[0]) {
   const body = parseCounterSessionBody(await readBody(event))
+  const workspaceId = body.workspaceId
 
   if (body.mode === 'non_member' || body.mode === 'tourist') {
     if (wantsPosShape(event)) {
@@ -146,8 +203,63 @@ export async function handleFranCounterSession(event: Parameters<typeof readBody
     }
   }
 
+  // Durable registration → crm_entities in the linked CRM workspace
   if (body.registration && wantsPosShape(event)) {
+    if (hasDurableCrmBackend() && isUuid(workspaceId)) {
+      try {
+        const person = await registerPosMemberAuto(workspaceId, {
+          fullName: body.registration.fullName,
+          phone: body.registration.phone,
+          birthday: body.registration.birthday,
+        })
+        return buildPosSessionFromRegistryPerson(person, workspaceId, {
+          persisted: true,
+          created: person.created,
+        })
+      } catch (e: any) {
+        console.warn('[fran-pos] durable registration failed', e?.message || e)
+        // Fall back to ephemeral demo session so checkout is not blocked
+        const demo = buildPosRegistrationSession(body.registration)
+        return {
+          ...demo,
+          warnings: [
+            ...(demo.warnings || []),
+            `crm_persist_failed: ${e?.message || 'unknown'}`,
+          ],
+        }
+      }
+    }
     return buildPosRegistrationSession(body.registration)
+  }
+
+  // Durable session open for existing person id
+  if (hasDurableCrmBackend() && isUuid(workspaceId) && (body.personId || body.memberId || body.memberRef)) {
+    try {
+      let person: RegistryPerson | null = null
+      const id = body.personId || body.memberId
+      if (id && isUuid(String(id))) {
+        person = await findPersonByIdAuto(workspaceId, String(id))
+      }
+      if (!person && body.memberRef) {
+        const matches = await resolvePosMemberAuto(workspaceId, {
+          type: 'member_number',
+          value: String(body.memberRef),
+        })
+        person = matches[0] || null
+      }
+      if (person) {
+        if (wantsPosShape(event)) {
+          return buildPosSessionFromRegistryPerson(person, workspaceId, {
+            persisted: true,
+            created: false,
+          })
+        }
+        const crmSession = createFranCounterSessionFromEntity(person.entity, body)
+        return { mode: 'supabase' as const, ...crmSession }
+      }
+    } catch (e: any) {
+      console.warn('[fran-pos] durable counter session failed', e?.message || e)
+    }
   }
 
   const crmSession = createFranCounterSession(body)
@@ -160,6 +272,10 @@ export async function handleFranCounterSession(event: Parameters<typeof readBody
     mode: 'demo',
     ...crmSession
   }
+}
+
+function isUuid(value: unknown) {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
 export function resolveFranMember(payload: FranMemberResolvePayload): {
@@ -312,6 +428,112 @@ function toPosMemberResolution(
     input,
     matches,
     warnings: resolved.warnings
+  }
+}
+
+function toPosMemberResolutionFromEntities(
+  entities: CrmEntity[],
+  body: FranMemberResolvePayload,
+  mode: 'demo' | 'supabase'
+) {
+  const input = {
+    raw: body.identifier.value,
+    method:
+      body.identifier.type === 'phone'
+        ? ('mobile' as const)
+        : body.identifier.type === 'qr'
+          ? ('qr' as const)
+          : body.identifier.type === 'barcode'
+            ? ('barcode' as const)
+            : ('member_number' as const)
+  }
+  const matches = entities.map((entity) => entityToPosMember(entity))
+  return {
+    mode,
+    status: matches.length > 0 ? 'matched' : 'none',
+    input,
+    matches,
+    warnings: [] as string[]
+  }
+}
+
+function buildPosSessionFromRegistryPerson(
+  person: RegistryPerson,
+  workspaceId: string,
+  opts: { persisted: boolean; created: boolean }
+) {
+  const member = entityToPosMember(person.entity)
+  const now = new Date()
+  return {
+    sessionId: buildSessionId(workspaceId, person.id, 'pos'),
+    mode: 'member' as const,
+    member,
+    activePerks: activePerksFor(member),
+    pointsExpiryAlert: pointsExpiryFor(member, member.pointsExpireAt),
+    startedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 45 * 60 * 1000).toISOString(),
+    prompts: [
+      opts.created
+        ? `New member ${member.memberNo} created in Fran CRM`
+        : `${member.name} · ${member.tierLabel || member.tier} · ${member.pointsBalance} pts`,
+    ],
+    warnings: opts.persisted
+      ? opts.created
+        ? ['member_persisted', 'mode:supabase']
+        : ['member_existing', 'mode:supabase']
+      : ['mode:demo'],
+    source: opts.persisted ? 'fran-crm' : 'fran-crm-demo',
+    crmWorkspaceId: workspaceId,
+    personId: person.id,
+  }
+}
+
+function createFranCounterSessionFromEntity(entity: CrmEntity, body: FranCounterSessionPayload) {
+  // Reuse createFranCounterSession shape by temporarily using entity fields
+  const payload = { ...body, personId: entity.id, memberRef: entity.externalIds?.fran_member }
+  // Inject entity into demo finder via personId match against a synthetic path:
+  const profileValues = readProfileValues(entity.attributes)
+  const memberValues = profileValues.fran_member || {}
+  const loyaltyValues = profileValues.fran_loyalty || {}
+  const counterProfile = createCounterProfile(entity, profilePackDefinitions)
+  const fwb = fwbFieldsFromLoyalty(loyaltyValues)
+  return {
+    status: 'created' as const,
+    sessionId: buildSessionId(body.workspaceId, entity.id, body.store?.id),
+    member: {
+      personId: entity.id,
+      displayName: entity.label,
+      memberRef: stringOrNull(memberValues.member_number) || entity.externalIds.fran_member || entity.id,
+      mobile: stringOrNull(memberValues.mobile) || stringOrNull((entity.attributes as any).phone),
+      email: stringOrNull((entity.attributes as any).email),
+      tierKey: fwb.tierKey,
+      tierLabel: fwb.tierLabel,
+      pointsBalance: fwb.pointsBalance,
+      calendarYtdSpend: fwb.calendarYtdSpend,
+      memberSince: stringOrNull(memberValues.member_since),
+      birthday: stringOrNull(memberValues.birthday),
+    },
+    profileCardFields: counterProfile.packs || {},
+    tierBadge: {
+      tier: fwb.tierKey,
+      nextTier: fwb.nextTier,
+      spendToNextTier: fwb.spendToNextTier,
+    },
+    points: {
+      balance: fwb.pointsBalance,
+      expiringSoon: numberOrNull(loyaltyValues.points_expiring_soon) || 0,
+      expiryDate: stringOrNull(loyaltyValues.points_expiry_date),
+    },
+    rewardAvailability: { eligible: [] as any[], blocked: [] as any[] },
+    beautyProfileWarnings: counterProfile.warnings,
+    sourceFreshness: [
+      {
+        sourceSystem: body.sourceSystem || 'fran-pos',
+        status: 'live',
+        observedAt: new Date().toISOString(),
+      },
+    ],
+    warnings: ['mode:supabase'],
   }
 }
 
