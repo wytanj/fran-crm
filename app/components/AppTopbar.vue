@@ -10,7 +10,8 @@ const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSet
 const pageTitle = computed(() => {
   const labels: Record<string, string> = {
     '/': 'Home',
-    '/graph': 'Customer graph',
+    '/customers': 'Customers',
+    '/graph': 'Identity graph',
     '/analytics': 'Analytics',
     '/simulator': 'Loyalty simulator',
     '/schema': 'Schema',
@@ -29,6 +30,15 @@ const pageTitle = computed(() => {
 
   return labels[route.path] || 'Fran CRM'
 })
+
+async function runTopbarSearch() {
+  const q = query.value.trim()
+  if (!q) {
+    await navigateTo('/customers')
+    return
+  }
+  await navigateTo({ path: '/customers', query: { q } })
+}
 
 onMounted(async () => {
   startAuthListener()
@@ -53,10 +63,15 @@ async function handleSignOut() {
     </div>
 
     <div class="topbar-actions">
-      <label class="search-box">
+      <form class="search-box" role="search" @submit.prevent="runTopbarSearch">
         <Search :size="17" />
-        <input v-model="query" type="search" placeholder="Search people, orders, tickets" aria-label="Search" />
-      </label>
+        <input
+          v-model="query"
+          type="search"
+          placeholder="Search customers…"
+          aria-label="Search customers"
+        >
+      </form>
       <NuxtLink v-if="user" class="icon-button" to="/settings" title="API keys">
         <KeyRound :size="18" />
       </NuxtLink>

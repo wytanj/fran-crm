@@ -610,6 +610,238 @@ textarea {
   padding: var(--space-6) var(--space-6) var(--space-8);
 }
 
+/* Customers master–detail -------------------------------------------------- */
+
+.customers-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.customers-workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.25fr);
+  gap: var(--space-4);
+  align-items: start;
+  min-height: 520px;
+}
+
+.customers-list-panel,
+.customers-detail-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+.customers-list-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: min(78vh, 860px);
+  overflow: hidden;
+}
+
+.customers-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.customers-search {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.customers-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.customer-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: background var(--dur) var(--ease);
+}
+
+.customer-row:hover {
+  background: var(--panel-strong);
+}
+
+.customer-row.active {
+  background: var(--teal-tint);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.customer-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-sunken);
+  color: var(--teal-dark);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.customer-row.active .customer-avatar {
+  background: var(--teal);
+  color: #fff;
+}
+
+.customer-row-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.customer-row-main strong {
+  font-size: var(--text-base);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-row-main small,
+.customer-row-meta small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-row-meta {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  align-content: center;
+}
+
+.tier-pill {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+}
+
+.customers-empty {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  color: var(--muted);
+}
+
+.customers-empty h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-md);
+}
+
+.customers-empty p {
+  margin: 0;
+  max-width: 32ch;
+  font-size: var(--text-sm);
+}
+
+.customers-detail-panel {
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-5);
+}
+
+.customers-detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.customers-detail-header h2 {
+  margin: var(--space-1) 0 var(--space-2);
+  font-size: var(--text-xl);
+  font-weight: 650;
+}
+
+.detail-icon {
+  color: var(--teal);
+  flex: 0 0 auto;
+}
+
+.customers-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.customers-fact-grid > div {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+}
+
+.customers-fact-grid dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.customers-fact-grid dd {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.customers-section {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.customers-section h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.customers-footnote {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.customers-footnote a {
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+
 .section-heading,
 .intro-strip {
   display: flex;
@@ -2953,8 +3185,15 @@ textarea {
   .two-column,
   .api-grid,
   .docs-card-grid,
-  .settings-grid {
+  .settings-grid,
+  .customers-workspace,
+  .customers-metrics,
+  .customers-fact-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .customers-list-panel {
+    max-height: 420px;
   }
 
   /* minmax(0, 1fr), not 1fr: a bare `1fr` track floors at min-content, so a wide

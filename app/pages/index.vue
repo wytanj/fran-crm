@@ -7,8 +7,8 @@ import { ArrowRight, BadgeCheck, Blocks, BookOpen, FileText, FlaskConical, Shiel
     <div class="intro-strip">
       <div>
         <p class="eyebrow">Fran CRM</p>
-        <h2>A headless customer graph behind Fran POS</h2>
-        <p>Member identity, loyalty policy, and reward decisions served through one set of contracts.</p>
+        <h2>Members, rewards, and the graph behind Fran POS</h2>
+        <p>Browse customers, run loyalty policy, and serve POS-safe profiles through one set of contracts.</p>
       </div>
       <Blocks :size="24" />
     </div>

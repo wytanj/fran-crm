@@ -48,7 +48,7 @@ async function handleAccept() {
     await acceptInvite(token.value)
     status.value = 'done'
     await loadWorkspaces()
-    await navigateTo('/graph')
+    await navigateTo('/customers')
   } catch (e) {
     errorMsg.value = e instanceof Error ? e.message : 'Failed to accept invite'
   } finally {

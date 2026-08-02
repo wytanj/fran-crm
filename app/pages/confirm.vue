@@ -53,7 +53,7 @@ onMounted(async () => {
     }
 
     const access = await loadWorkspaces()
-    await navigateTo(access?.requiresSetup ? '/setup' : nextPath.value || '/graph', { replace: true })
+    await navigateTo(access?.requiresSetup ? '/setup' : nextPath.value || '/customers', { replace: true })
   } catch (confirmError) {
     error.value = resolveConfirmErrorMessage(confirmError)
     status.value = 'Sign-in confirmation failed.'

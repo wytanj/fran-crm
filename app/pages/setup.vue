@@ -169,7 +169,7 @@ async function joinInvite(inv: PendingCrmInvite) {
   try {
     await acceptInvite(inv.token)
     await loadWorkspaces()
-    await navigateTo('/graph')
+    await navigateTo('/customers')
   } catch (e) {
     joinError.value = e instanceof Error ? e.message : 'Failed to join workspace'
   } finally {
@@ -179,7 +179,7 @@ async function joinInvite(inv: PendingCrmInvite) {
 
 async function submitSetup() {
   if (primaryWorkspace.value?.id) {
-    await navigateTo('/graph')
+    await navigateTo('/customers')
     return
   }
 
@@ -195,7 +195,7 @@ async function submitSetup() {
     created.value = true
 
     if (workspace.id) {
-      await navigateTo('/graph')
+      await navigateTo('/customers')
     }
   } finally {
     creatingWorkspace.value = false
@@ -305,7 +305,7 @@ async function submitSetup() {
         </template>
 
         <div v-if="primaryWorkspace" class="setup-auth-actions">
-          <button class="primary-button" type="button" @click="navigateTo('/graph')">
+          <button class="primary-button" type="button" @click="navigateTo('/customers')">
             Open company workspace
           </button>
         </div>

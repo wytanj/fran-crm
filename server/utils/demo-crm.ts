@@ -32,7 +32,7 @@ export const demoCrmGraph: CrmGraphResponse = {
       type: 'person',
       label: 'Ava Tan',
       externalIds: { fran_member: 'FRAN-0001', pos: 'cust_1194' },
-      tags: ['gold tier', 'repeat buyer', 'counter profile'],
+      tags: ['F3', 'repeat buyer', 'counter profile'],
       attributes: {
         email: 'ava@example.com',
         phone: '+65 8123 4470',
@@ -41,13 +41,15 @@ export const demoCrmGraph: CrmGraphResponse = {
         currency: 'SGD',
         orders_count: 18,
         lifecycle_stage: 'loyal',
+        last_visit_at: '2026-05-28T10:18:00.000Z',
+        preferred_store: 'Bugis+',
         profile_packs: {
           fran_member: {
             member_number: 'FRAN-0001',
             mobile: '+65 8123 4470',
             member_since: '2024-03-18',
             birthday: '1992-09-12',
-            preferred_store: 'ION Orchard',
+            preferred_store: 'Bugis+',
             consent_status: 'granted'
           },
           fran_loyalty: {
@@ -74,6 +76,207 @@ export const demoCrmGraph: CrmGraphResponse = {
       },
       createdAt: '2026-04-04T09:20:00.000Z',
       updatedAt: '2026-05-28T11:10:00.000Z'
+    },
+    {
+      id: 'person_002',
+      type: 'person',
+      label: 'Mei Ling Chong',
+      externalIds: { fran_member: 'FRAN-0142', pos: 'cust_2201' },
+      tags: ['F2', 'sunscreen'],
+      attributes: {
+        email: 'mei.ling@example.com',
+        phone: '+65 9012 3344',
+        accepts_marketing: true,
+        total_spent: 960,
+        currency: 'SGD',
+        orders_count: 7,
+        lifecycle_stage: 'active',
+        last_visit_at: '2026-05-20T14:02:00.000Z',
+        preferred_store: 'Bugis+',
+        profile_packs: {
+          fran_member: {
+            member_number: 'FRAN-0142',
+            mobile: '+65 9012 3344',
+            member_since: '2025-01-09',
+            birthday: '1998-04-02',
+            preferred_store: 'Bugis+',
+            consent_status: 'granted'
+          },
+          fran_loyalty: {
+            tier: 'F2',
+            tier_key: 'F2',
+            points_balance: 4200,
+            points_expiring_soon: 0,
+            ytd_spend: 960,
+            next_tier: 'F3',
+            spend_to_next_tier: 540
+          }
+        }
+      },
+      createdAt: '2025-01-09T08:00:00.000Z',
+      updatedAt: '2026-05-20T14:05:00.000Z'
+    },
+    {
+      id: 'person_003',
+      type: 'person',
+      label: 'Jordan Lee',
+      externalIds: { fran_member: 'FRAN-0088', pos: 'cust_1880' },
+      tags: ['F1', 'new member'],
+      attributes: {
+        email: 'jordan.lee@example.com',
+        phone: '+65 8233 1100',
+        accepts_marketing: false,
+        total_spent: 128,
+        currency: 'SGD',
+        orders_count: 2,
+        lifecycle_stage: 'new',
+        last_visit_at: '2026-05-12T11:40:00.000Z',
+        preferred_store: 'Bugis+',
+        profile_packs: {
+          fran_member: {
+            member_number: 'FRAN-0088',
+            mobile: '+65 8233 1100',
+            member_since: '2026-04-01',
+            birthday: '2001-11-20',
+            preferred_store: 'Bugis+',
+            consent_status: 'limited'
+          },
+          fran_loyalty: {
+            tier: 'F1',
+            tier_key: 'F1',
+            points_balance: 640,
+            points_expiring_soon: 0,
+            ytd_spend: 128,
+            next_tier: 'F2',
+            spend_to_next_tier: 372
+          }
+        }
+      },
+      createdAt: '2026-04-01T10:00:00.000Z',
+      updatedAt: '2026-05-12T11:45:00.000Z'
+    },
+    {
+      id: 'person_004',
+      type: 'person',
+      label: 'Priya Nair',
+      externalIds: { fran_member: 'FRAN-0033', pos: 'cust_1502' },
+      tags: ['F3', 'at risk'],
+      attributes: {
+        email: 'priya.nair@example.com',
+        phone: '+65 9876 2211',
+        accepts_marketing: true,
+        total_spent: 4100,
+        currency: 'SGD',
+        orders_count: 22,
+        lifecycle_stage: 'at_risk',
+        last_visit_at: '2026-02-14T16:20:00.000Z',
+        preferred_store: 'Bugis+',
+        profile_packs: {
+          fran_member: {
+            member_number: 'FRAN-0033',
+            mobile: '+65 9876 2211',
+            member_since: '2023-08-02',
+            birthday: '1989-06-30',
+            preferred_store: 'Bugis+',
+            consent_status: 'granted'
+          },
+          fran_loyalty: {
+            tier: 'F3',
+            tier_key: 'F3',
+            points_balance: 9200,
+            points_expiring_soon: 2800,
+            points_expiry_date: '2026-07-31',
+            ytd_spend: 210,
+            next_tier: null,
+            spend_to_next_tier: 0
+          }
+        }
+      },
+      createdAt: '2023-08-02T09:00:00.000Z',
+      updatedAt: '2026-02-14T16:25:00.000Z'
+    },
+    {
+      id: 'person_005',
+      type: 'person',
+      label: 'Daniel Wong',
+      externalIds: { fran_member: 'FRAN-0210', pos: 'cust_2408' },
+      tags: ['F2', 'gift buyer'],
+      attributes: {
+        email: 'daniel.wong@example.com',
+        phone: '+65 9123 7788',
+        accepts_marketing: true,
+        total_spent: 540,
+        currency: 'SGD',
+        orders_count: 4,
+        lifecycle_stage: 'active',
+        last_visit_at: '2026-05-26T13:10:00.000Z',
+        preferred_store: 'Bugis+',
+        profile_packs: {
+          fran_member: {
+            member_number: 'FRAN-0210',
+            mobile: '+65 9123 7788',
+            member_since: '2025-11-11',
+            birthday: '1995-12-01',
+            preferred_store: 'Bugis+',
+            consent_status: 'granted'
+          },
+          fran_loyalty: {
+            tier: 'F2',
+            tier_key: 'F2',
+            points_balance: 2100,
+            points_expiring_soon: 100,
+            ytd_spend: 540,
+            next_tier: 'F3',
+            spend_to_next_tier: 960
+          }
+        }
+      },
+      createdAt: '2025-11-11T07:30:00.000Z',
+      updatedAt: '2026-05-26T13:12:00.000Z'
+    },
+    {
+      id: 'person_006',
+      type: 'person',
+      label: 'Siti Rahman',
+      externalIds: { fran_member: 'FRAN-0055', pos: 'cust_1300' },
+      tags: ['F1', 'skincare'],
+      attributes: {
+        email: 'siti.rahman@example.com',
+        phone: '+65 8765 4422',
+        accepts_marketing: true,
+        total_spent: 310,
+        currency: 'SGD',
+        orders_count: 5,
+        lifecycle_stage: 'active',
+        last_visit_at: '2026-05-18T09:55:00.000Z',
+        preferred_store: 'Bugis+',
+        profile_packs: {
+          fran_member: {
+            member_number: 'FRAN-0055',
+            mobile: '+65 8765 4422',
+            member_since: '2025-06-20',
+            birthday: '1996-02-14',
+            preferred_store: 'Bugis+',
+            consent_status: 'granted'
+          },
+          fran_loyalty: {
+            tier: 'F1',
+            tier_key: 'F1',
+            points_balance: 1550,
+            points_expiring_soon: 0,
+            ytd_spend: 310,
+            next_tier: 'F2',
+            spend_to_next_tier: 190
+          },
+          fran_beauty_profile: {
+            skin_type: 'Dry',
+            skin_concerns: ['Barrier', 'Redness'],
+            preferred_routine: 'Gentle hydration'
+          }
+        }
+      },
+      createdAt: '2025-06-20T11:00:00.000Z',
+      updatedAt: '2026-05-18T10:00:00.000Z'
     },
     {
       id: 'company_001',

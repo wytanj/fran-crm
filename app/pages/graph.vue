@@ -32,6 +32,11 @@ onMounted(async () => {
       <div v-else-if="data?.mode === 'demo'" class="notice-bar">
         Running on demo data. Add Supabase keys to use your own database.
       </div>
+      <div class="notice-bar">
+        Looking for a simple member list?
+        <NuxtLink to="/customers">Open Customers</NuxtLink>
+        — this page is the identity graph (links, packs, proposals).
+      </div>
       <MetricStrip :metrics="graph.metrics" />
       <GraphWorkspace
         :entities="graph.entities"
