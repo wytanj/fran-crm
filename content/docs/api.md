@@ -35,19 +35,65 @@ Payload:
 }
 ```
 
-The route writes `crm_agent_connector_installs` and an `agent.connector.configured` audit event. Claude Team owner approval, OAuth client registration, and production callback approval remain outside this repo.
+The route writes `crm_agent_connector_installs` and an `agent.connector.configured` audit event. Generate the Claude client id/secret with `POST /api/mcp-oauth/client`, then paste them into Claude Advanced settings.
 
 ## GET /api/mcp
 
-Returns a lightweight discovery response for Fran CRM's remote MCP endpoint, including protocol version and tool names.
+Returns a lightweight discovery response for Fran CRM's remote MCP endpoint, including protocol version and tool names. Public alias: `GET /mcp`.
 
 ## POST /api/mcp
 
-Handles JSON-RPC MCP requests. Supported methods are `initialize`, `tools/list`, and `tools/call`.
+Handles JSON-RPC MCP requests. Supported methods are `initialize`, `tools/list`, and `tools/call`. Public alias: `POST /mcp`.
 
-The first implemented tool is `fran.analytics.topCustomers`, which answers date-ranged customer purchase ranking questions and returns compact rows plus chart-ready bar data. Tool calls require Supabase bearer auth, workspace membership, and every required capability. Contact fields are redacted unless the caller has `customer.contact.read`.
+The first implemented tool is `fran.analytics.topCustomers`. Tool calls accept a per-user MCP OAuth bearer (`mcp_at_…`) or a Supabase access token. Membership is the same `crm_workspace_members` row created by web invites. Contact fields are redacted unless the caller has `customer.contact.read`.
+
+Unauthenticated `/mcp` calls return `401` plus `WWW-Authenticate` when OAuth is configured so Claude can start the consent flow at `/oauth/authorize`.
 
 Every `tools/call` request writes `crm_mcp_request_logs` before auth and capability checks, then updates that row with final status, compact response summary, or sanitized error details. Successful tool executions also write `crm_execution_logs` and `crm_audit_events`.
+
+## GET /api/oauth/authorize-info
+
+Backs the Claude consent screen: signed-in user, CRM workspace, tools, and pending CRM invites.
+
+## POST /api/oauth/approve
+
+Mints the authorization code after the user signs in or accepts a CRM invite.
+
+## GET /api/mcp-oauth/client
+
+Returns the MCP URL and non-secret Claude client metadata for a workspace.
+
+## POST /api/mcp-oauth/client
+
+Creates or rotates the Claude OAuth client secret. The raw secret is shown once.
+
+## DELETE /api/mcp-oauth/client
+
+Revokes the Claude client and live tokens.
+
+## GET /api/crm/customers
+
+Lists workspace people/members for the Customers desk. Requires a signed-in workspace member.
+
+## GET /api/crm/skums-workspaces
+
+Lists SKUMS business workspaces the signed-in user can attach CRM to.
+
+## POST /api/fran/pos/loyalty/commit-sale
+
+POS sale commit for loyalty earn/redeem. Root alias `POST /fran/pos/loyalty/commit-sale`.
+
+## POST /api/fran/pos/loyalty/vouchers/authorize
+
+Authorizes a voucher for POS redemption.
+
+## POST /api/fran/pos/loyalty/vouchers/issue
+
+Issues a loyalty voucher for a member.
+
+## POST /api/fran/pos/loyalty/vouchers/quote-redeem
+
+Quotes voucher redemption against a basket without committing.
 
 ## POST /api/fran/pos/member/resolve
 

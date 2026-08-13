@@ -7,15 +7,28 @@ definePageMeta({
   middleware: 'authenticated-client'
 })
 
-const { isConfigured, refreshSession, signInWithGoogle, startAuthListener, user } = useCrmAuth()
+const { isConfigured, refreshSession, session, signInWithGoogle, startAuthListener, user } = useCrmAuth()
 const { createWorkspace, error, loadWorkspaces, pending, primaryWorkspace } = useCrmWorkspaceAccess()
 const { acceptInvite, listMyPending } = useCrmWorkspaceInvites()
 
 const form = reactive<WorkspaceSetupPayload>({
   companyName: '',
   slug: '',
-  plan: 'hosted_growth'
+  plan: 'hosted_growth',
+  skumsWorkspaceId: ''
 })
+
+type SkumsOption = {
+  id: string
+  name: string
+  role: string
+  alreadyLinked: boolean
+  linkedCrmWorkspaceId: string | null
+}
+
+const skumsWorkspaces = ref<SkumsOption[]>([])
+const skumsReason = ref('')
+const loadingSkums = ref(false)
 const created = ref(false)
 const creatingWorkspace = ref(false)
 const googlePending = ref(false)
@@ -27,6 +40,8 @@ const showCreateForm = ref(false)
 const joining = ref(false)
 const joinError = ref('')
 
+const openSkumsWorkspaces = computed(() => skumsWorkspaces.value.filter((workspace) => !workspace.alreadyLinked))
+const linkedSkumsWorkspaces = computed(() => skumsWorkspaces.value.filter((workspace) => workspace.alreadyLinked))
 const mustSignIn = computed(() => isConfigured.value && !user.value)
 const submitLabel = computed(() => {
   if (primaryWorkspace.value) {
@@ -91,6 +106,38 @@ function fillSuggestedCompany() {
   form.slug = normalizeSlug(suggestedName)
 }
 
+async function loadSkumsWorkspaces() {
+  if (!user.value) {
+    skumsWorkspaces.value = []
+    return
+  }
+  loadingSkums.value = true
+  try {
+    const headers = session.value?.access_token
+      ? { Authorization: `Bearer ${session.value.access_token}` }
+      : undefined
+    const listed = await $fetch<{ reason: string | null; workspaces: SkumsOption[] }>('/api/crm/skums-workspaces', { headers })
+    skumsWorkspaces.value = listed.workspaces
+    skumsReason.value = listed.reason || ''
+    const open = listed.workspaces.find((workspace) => !workspace.alreadyLinked)
+    if (open && !form.skumsWorkspaceId) {
+      selectSkumsWorkspace(open.id)
+    }
+  } catch (loadError) {
+    skumsReason.value = loadError instanceof Error ? loadError.message : 'Could not load SKUMS workspaces.'
+  } finally {
+    loadingSkums.value = false
+  }
+}
+
+function selectSkumsWorkspace(id: string) {
+  form.skumsWorkspaceId = id
+  const selected = skumsWorkspaces.value.find((workspace) => workspace.id === id)
+  if (!selected) return
+  if (!form.companyName) form.companyName = selected.name
+  if (!slugEdited.value) form.slug = normalizeSlug(selected.name)
+}
+
 async function loadPendingInvites() {
   if (!user.value) {
     pendingInvites.value = []
@@ -115,6 +162,7 @@ onMounted(async () => {
 
   if (user.value || !isConfigured.value) {
     await loadWorkspaces()
+    await loadSkumsWorkspaces()
   }
 
   if (primaryWorkspace.value) {
@@ -186,10 +234,16 @@ async function submitSetup() {
   creatingWorkspace.value = true
 
   try {
+    if (!form.skumsWorkspaceId) {
+      authError.value = 'Pick the existing SKUMS business workspace this CRM belongs to.'
+      return
+    }
+
     const workspace = await createWorkspace({
       companyName: form.companyName,
       slug: form.slug,
-      plan: form.plan
+      plan: form.plan,
+      skumsWorkspaceId: form.skumsWorkspaceId
     })
 
     created.value = true
@@ -209,11 +263,11 @@ async function submitSetup() {
       <div>
         <p class="eyebrow">Company setup</p>
         <h2 v-if="pendingInvites.length && !primaryWorkspace">Join your team</h2>
-        <h2 v-else>Create your company workspace</h2>
+        <h2 v-else>Attach CRM to a SKUMS workspace</h2>
         <p v-if="pendingInvites.length && !primaryWorkspace">
-          Accept an invite to Fran CRM. Prefer this over creating a second workspace.
+          Accept an invite to Fran CRM. Prefer this over creating a second tenant on the same SKUMS workspace.
         </p>
-        <p v-else>Required before adding users, agents, or integrations (founders only after seed).</p>
+        <p v-else>CRM must live on an existing Fran SKUMS business workspace. Invite colleagues after that link exists.</p>
       </div>
       <Building2 :size="24" />
     </div>
@@ -274,7 +328,25 @@ async function submitSetup() {
 
           <form v-if="showCreateForm || !pendingInvites.length" class="space-stack" @submit.prevent="submitSetup">
             <p v-if="pendingInvites.length" class="muted-text">
-              Creating a new workspace starts a separate CRM tenant. Prefer joining if you were invited.
+              Creating a new CRM tenant still needs a SKUMS workspace that is not already linked. Prefer joining if you were invited.
+            </p>
+            <p v-if="skumsReason" class="notice-bar">{{ skumsReason }}</p>
+            <label>
+              <span>SKUMS business workspace</span>
+              <select
+                v-model="form.skumsWorkspaceId"
+                required
+                :disabled="loadingSkums || !openSkumsWorkspaces.length"
+                @change="selectSkumsWorkspace(form.skumsWorkspaceId)"
+              >
+                <option value="" disabled>Select a SKUMS workspace</option>
+                <option v-for="workspace in openSkumsWorkspaces" :key="workspace.id" :value="workspace.id">
+                  {{ workspace.name }} ({{ workspace.role }})
+                </option>
+              </select>
+            </label>
+            <p v-if="linkedSkumsWorkspaces.length" class="muted-text">
+              Already linked: {{ linkedSkumsWorkspaces.map((workspace) => workspace.name).join(', ') }}. Join that CRM instead of creating another.
             </p>
             <label>
               <span>Company name</span>
@@ -314,6 +386,7 @@ async function submitSetup() {
       <section class="settings-panel setup-checklist">
         <p class="eyebrow">Created on setup</p>
         <h2>Initial Fran surface</h2>
+        <div class="capability-row">Link to existing SKUMS workspace</div>
         <div class="capability-row">Owner membership</div>
         <div class="capability-row">Core person field definitions</div>
         <div class="capability-row">Fran member, loyalty, and beauty packs</div>

@@ -26,7 +26,7 @@ Fran CRM does not own basket mutation, payment execution, tender movement, recei
 - Mocked POS-facing routes exist for member resolve and counter session.
 - Versioned Fran loyalty policy tables and API routes exist for draft creation, active POS bundle loading, publish, and rollout assignments.
 - Analytics reads expose aggregate Bronze, Silver, Gold, sign-up, evaluation-cycle movement, points-issued, points-redeemed, liability, expiry-risk, top-spender, inactivity, birthday, and campaign-performance series and compact export rows.
-- Claude/MCP connector groundwork includes workspace-scoped connector install records, staff identity links, capability grants, MCP request logs, an `/api/mcp` JSON-RPC tool endpoint, and the first governed tool: `fran.analytics.topCustomers`.
+- Claude/MCP uses the same Google + invite membership as the web app. Generate a per-workspace client in Settings → Claude connector, point Claude at `/mcp`, and staff authorize as themselves. Hosted CRM tenants attach to an existing Fran SKUMS business workspace.
 - Fran contract docs live in `docs/fran-crm-contract.md` and `docs/fran-loyalty-policy.md`.
 
 ## Routes
@@ -45,8 +45,10 @@ Initial Fran POS routes:
 - `POST /api/fran/loyalty/assignments`
 - `GET /api/agents/connectors/claude/setup`
 - `POST /api/agents/connectors/claude/setup`
-- `GET /api/mcp`
-- `POST /api/mcp`
+- `GET /mcp` and `POST /mcp` (aliases of `/api/mcp`)
+- `GET /api/oauth/authorize-info`, `POST /api/oauth/approve`, `POST /oauth/token`
+- `GET|POST|DELETE /api/mcp-oauth/client`
+- `GET /api/crm/skums-workspaces`
 - `POST /api/v1/events`
 
 The root `/fran/pos/*` routes match the Fran POS contract. The `/api/fran/pos/*` aliases are kept for Nuxt API route conventions and documentation coverage.

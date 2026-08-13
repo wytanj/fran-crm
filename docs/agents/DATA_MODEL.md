@@ -14,6 +14,15 @@ Related tables:
 
 Workspace setup creates `crm_workspaces` first, then inserts the creator as `owner` in `crm_workspace_members`. Later CRM users, agents, and integration actors should be added under this workspace boundary rather than as global tenants.
 
+A hosted CRM tenant must bind to an existing Fran SKUMS business workspace via `crm_workspaces.skums_workspace_id` (unique). Prefer joining a CRM invite over creating a second tenant on the same SKUMS workspace. When the shared `workspace_crm_links` table is present, setup upserts the SKUMS → CRM link so POS loyalty stays on the SKUMS hub.
+
+MCP OAuth uses the same membership table as the web app:
+
+- `crm_mcp_oauth_clients`: Claude-as-an-application client id + hashed secret.
+- `crm_mcp_oauth_codes`: single-use authorization codes bound to a CRM user.
+- `crm_mcp_oauth_tokens`: per-user access/refresh tokens. Scopes are re-derived from live `crm_workspace_members` on every request.
+- Staff who are invited but not yet members can accept `crm_workspace_invites` on the `/oauth/authorize` consent screen before granting Claude access.
+
 The browser should not rely on direct table access for CRM data yet. Current UI reads and writes through Nuxt API routes using `SUPABASE_DB_URL` or a server-only Supabase key; `0003_data_api_service_role_grants.sql` explicitly grants the service role Data API access for the CRM tables created in earlier migrations.
 
 ## Staff Identity, Capabilities, And Agent Connectors

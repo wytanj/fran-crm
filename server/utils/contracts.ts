@@ -109,7 +109,8 @@ export const agentConnectorSetupPayloadSchema = z.object({
 export const workspaceSetupPayloadSchema = z.object({
   companyName: z.string().trim().min(2).max(120),
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(64).optional().or(z.literal('')),
-  plan: z.enum(paidPlanKeys).default('hosted_growth')
+  plan: z.enum(paidPlanKeys).default('hosted_growth'),
+  skumsWorkspaceId: z.string().uuid().optional()
 })
 
 export const crmEventPayloadSchema = z.object({

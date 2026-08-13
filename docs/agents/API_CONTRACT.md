@@ -56,11 +56,11 @@ Rules:
 
 - The route upserts `crm_agent_connector_installs` by `(workspace_id, provider, connector_name)`.
 - The route writes an `agent.connector.configured` audit event.
-- OAuth client registration, Claude Team approval, and production callback approval remain outside this repo.
+- OAuth credentials are generated in-repo at `POST /api/mcp-oauth/client`. Claude Team Owners still add the `/mcp` URL and paste the client id/secret.
 
 ### `GET /api/mcp`
 
-Returns a lightweight health and discovery response for the remote MCP endpoint.
+Returns a lightweight health and discovery response for the remote MCP endpoint. The public alias is `GET /mcp`. When MCP OAuth is configured and no bearer is present, `GET /mcp` returns `401` plus `WWW-Authenticate`.
 
 Response shape:
 
@@ -71,13 +71,13 @@ Response shape:
 
 ### `POST /api/mcp`
 
-Handles JSON-RPC MCP requests for Claude and other MCP clients.
+Handles JSON-RPC MCP requests for Claude and other MCP clients. The public alias is `POST /mcp`.
 
 Supported methods:
 
 - `initialize`: returns protocol version, server info, and tool capability support.
 - `tools/list`: returns the available typed tools.
-- `tools/call`: executes a named tool after Supabase auth and Fran CRM capability checks.
+- `tools/call`: executes a named tool after MCP OAuth or Supabase auth and Fran CRM capability checks.
 
 Tool:
 
@@ -85,9 +85,59 @@ Tool:
 
 Auth:
 
-- `tools/list` and `initialize` are safe discovery methods.
-- `tools/call` requires `Authorization: Bearer <access_token>`.
+- When an MCP OAuth client exists, unauthenticated `/mcp` calls return `401` with `WWW-Authenticate` so Claude can start the OAuth flow.
+- `tools/call` accepts `Authorization: Bearer mcp_at_…` (per-user OAuth) or a Supabase access token.
+- OAuth tokens resolve to `crm_mcp_oauth_tokens.user_id` and live `crm_workspace_members` membership. Invites use the same `accept_crm_workspace_invite` path as the web app.
 - The authenticated user must belong to the requested workspace and have every capability required by the tool.
+
+### `GET /api/oauth/authorize-info`
+
+Backs the Claude consent screen. Validates the authorize query, then reports signed-in user, CRM workspace, role, visible tools, and pending CRM invites.
+
+Auth: optional Bearer. Unsigned callers receive `{ signed_in: false }`.
+
+### `POST /api/oauth/approve`
+
+Mints a one-time authorization code bound to the signed-in CRM user and their workspace.
+
+Auth: Supabase Bearer required. The user must already be a `crm_workspace_members` row (accept a pending invite on the consent screen first).
+
+### `GET /api/mcp-oauth/client`
+
+Returns connector URL, non-secret client metadata, and connected staff for a workspace.
+
+Query: `workspaceId` required. Auth: Bearer plus `agent.connector.manage`.
+
+### `POST /api/mcp-oauth/client`
+
+Creates or rotates the Claude OAuth client secret for a workspace. The raw secret is returned once.
+
+Payload: `{ "workspaceId": "uuid", "label": "Claude connector" }`. Auth: Bearer plus `agent.connector.manage`.
+
+### `DELETE /api/mcp-oauth/client`
+
+Revokes the workspace OAuth client and live tokens.
+
+Query: `workspaceId` required. Auth: Bearer plus `agent.connector.manage`.
+
+### `GET /api/crm/customers`
+
+Lists workspace people/members for the Customers desk.
+
+Query:
+
+- `workspaceId`: required for hosted reads.
+- `q`: optional search string.
+- `tier`: optional loyalty tier filter.
+- `limit`, `offset`: pagination.
+
+Auth: Bearer plus workspace membership.
+
+### `GET /api/crm/skums-workspaces`
+
+Lists Fran SKUMS business workspaces the signed-in user belongs to, plus whether each is already linked to a CRM tenant.
+
+Auth: Bearer. Reads shared `workspace_members` / `workspaces` when those tables exist in the same database.
 
 Rules:
 
@@ -120,6 +170,22 @@ Rules:
 - `identifier.type` must be `phone`, `member_number`, `qr`, `barcode`, or `external_ref`.
 - The mocked fixture resolves Ava Tan as `person_001` and member ref `FRAN-0001`.
 - Status may be `exact`, `candidates`, `none`, or `ambiguous`.
+
+### `POST /api/fran/pos/loyalty/commit-sale`
+
+POS sale commit for loyalty earn/redeem. Root alias `POST /fran/pos/loyalty/commit-sale`. Persists ledger batches when a workspace is present.
+
+### `POST /api/fran/pos/loyalty/vouchers/authorize`
+
+Authorizes a voucher for POS redemption.
+
+### `POST /api/fran/pos/loyalty/vouchers/issue`
+
+Issues a loyalty voucher for a member.
+
+### `POST /api/fran/pos/loyalty/vouchers/quote-redeem`
+
+Quotes voucher redemption against a basket without committing.
 
 ### `POST /api/fran/pos/counter-session`
 
@@ -580,7 +646,7 @@ Response shape:
 - `mode`: `demo` or `supabase`.
 - `requiresSetup`: `true` when the user has no workspace membership.
 - `user`: signed-in Supabase user summary.
-- `workspaces`: workspace summaries with `id`, `name`, `slug`, `role`, `plan`, and `hostingMode`.
+- `workspaces`: workspace summaries with `id`, `name`, `slug`, `role`, `plan`, `hostingMode`, and `skumsWorkspaceId`.
 
 Fallback behavior:
 
@@ -596,14 +662,18 @@ Payload:
 {
   "companyName": "Acme Retail",
   "slug": "acme-retail",
-  "plan": "hosted_growth"
+  "plan": "hosted_growth",
+  "skumsWorkspaceId": "22222222-2222-4222-8222-222222222222"
 }
 ```
 
 Rules:
 
 - Supabase mode requires `Authorization: Bearer <access_token>`.
+- `skumsWorkspaceId` is required and must be a SKUMS workspace the user already belongs to.
+- One CRM tenant per SKUMS workspace (`crm_workspaces.skums_workspace_id` unique).
 - The creating user becomes `owner` in `crm_workspace_members`.
+- When `workspace_crm_links` exists in the same database, the route upserts the SKUMS → CRM link.
 - Server persistence uses `SUPABASE_DB_URL` when present, otherwise `SUPABASE_SERVICE_ROLE_KEY`.
 - The route seeds core person fields in `crm_field_definitions`.
 - The route installs default Fran profile packs: `fran_member`, `fran_loyalty`, and `fran_beauty_profile`.

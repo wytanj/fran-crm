@@ -25,6 +25,8 @@ export default defineNuxtConfig({
     supabaseDatabaseUrl: process.env.SUPABASE_DB_URL,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    mcpOauthClientId: process.env.MCP_OAUTH_CLIENT_ID || '',
+    mcpOauthClientSecret: process.env.MCP_OAUTH_CLIENT_SECRET || '',
     public: {
       appName: 'Fran CRM',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',

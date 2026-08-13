@@ -1,6 +1,7 @@
 import { shopifyCustomerFields } from '../../../utils/demo-crm'
 import { workspaceSetupPayloadSchema } from '../../../utils/contracts'
 import { getDefaultProfilePacks, toDbFieldRow, toDbProfilePackRow } from '../../../utils/profile-packs'
+import { assertSkumsWorkspaceMembership, syncSkumsCrmLink } from '../../../utils/skums-workspaces'
 
 const plannedSources = [
   { key: 'shopify', label: 'Shopify', source_type: 'commerce', status: 'planned' },
@@ -87,12 +88,21 @@ export default defineEventHandler(async (event) => {
         slug: requestedSlug,
         role: 'owner',
         plan: body.plan,
-        hostingMode: 'demo'
+        hostingMode: 'demo',
+        skumsWorkspaceId: body.skumsWorkspaceId
       }
     }
   }
 
   const { user } = await requireSupabaseUser(event, supabase || undefined)
+  if (!body.skumsWorkspaceId) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'skumsWorkspaceId is required. Attach CRM to an existing SKUMS business workspace.'
+    })
+  }
+  const skums = await assertSkumsWorkspaceMembership(user, body.skumsWorkspaceId)
+  const siteUrl = String(useRuntimeConfig().public.siteUrl || '').replace(/\/+$/, '') || 'http://localhost:3000'
 
   if (sql) {
     const slug = await resolveSlugWithPostgres(sql, requestedSlug)
@@ -103,12 +113,13 @@ export default defineEventHandler(async (event) => {
         slug: string
         plan: string
         hosting_mode: string
+        skums_workspace_id: string | null
         created_at: string
         updated_at: string
       }>>`
-        insert into public.crm_workspaces (name, slug, plan, hosting_mode, created_by)
-        values (${body.companyName}, ${slug}, ${body.plan}, 'hosted', ${user.id}::uuid)
-        returning id::text, name, slug, plan, hosting_mode, created_at, updated_at
+        insert into public.crm_workspaces (name, slug, plan, hosting_mode, created_by, skums_workspace_id)
+        values (${skums.name || body.companyName}, ${slug}, ${body.plan}, 'hosted', ${user.id}::uuid, ${body.skumsWorkspaceId}::uuid)
+        returning id::text, name, slug, plan, hosting_mode, skums_workspace_id::text, created_at, updated_at
       `
 
       if (!createdWorkspace) {
@@ -266,7 +277,7 @@ export default defineEventHandler(async (event) => {
           'workspace.created',
           'workspace',
           ${createdWorkspace.id}::uuid,
-          ${JSON.stringify({ plan: body.plan, hostingMode: 'hosted', defaultProfilePacks: getDefaultProfilePacks().map((pack) => pack.key) })}::jsonb
+          ${JSON.stringify({ plan: body.plan, hostingMode: 'hosted', skumsWorkspaceId: body.skumsWorkspaceId, defaultProfilePacks: getDefaultProfilePacks().map((pack) => pack.key) })}::jsonb
         )
       `
 
@@ -277,6 +288,13 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: 'Workspace creation returned no row.' })
     }
 
+    await syncSkumsCrmLink({
+      skumsWorkspaceId: body.skumsWorkspaceId,
+      crmWorkspaceId: workspace.id,
+      crmBaseUrl: siteUrl,
+      userId: user.id
+    })
+
     return {
       mode: 'supabase',
       workspace: {
@@ -286,6 +304,7 @@ export default defineEventHandler(async (event) => {
         role: 'owner',
         plan: workspace.plan,
         hostingMode: workspace.hosting_mode,
+        skumsWorkspaceId: workspace.skums_workspace_id,
         createdAt: workspace.created_at,
         updatedAt: workspace.updated_at
       }
@@ -301,13 +320,14 @@ export default defineEventHandler(async (event) => {
   const { data: workspace, error: workspaceError } = await supabase
     .from('crm_workspaces')
     .insert({
-      name: body.companyName,
+      name: skums.name || body.companyName,
       slug,
       plan: body.plan,
       hosting_mode: 'hosted',
-      created_by: user.id
+      created_by: user.id,
+      skums_workspace_id: body.skumsWorkspaceId
     })
-    .select('id, name, slug, plan, hosting_mode, created_at, updated_at')
+    .select('id, name, slug, plan, hosting_mode, skums_workspace_id, created_at, updated_at')
     .single()
 
   if (workspaceError) {
@@ -455,6 +475,7 @@ export default defineEventHandler(async (event) => {
       metadata: {
         plan: body.plan,
         hostingMode: 'hosted',
+        skumsWorkspaceId: body.skumsWorkspaceId,
         defaultProfilePacks: defaultPacks.map((pack) => pack.key)
       }
     })
@@ -462,6 +483,13 @@ export default defineEventHandler(async (event) => {
   if (auditError) {
     throw createError({ statusCode: 500, statusMessage: auditError.message })
   }
+
+  await syncSkumsCrmLink({
+    skumsWorkspaceId: body.skumsWorkspaceId,
+    crmWorkspaceId: workspace.id,
+    crmBaseUrl: siteUrl,
+    userId: user.id
+  })
 
   return {
     mode: 'supabase',
@@ -472,6 +500,7 @@ export default defineEventHandler(async (event) => {
       role: 'owner',
       plan: workspace.plan,
       hostingMode: workspace.hosting_mode,
+      skumsWorkspaceId: workspace.skums_workspace_id,
       createdAt: workspace.created_at,
       updatedAt: workspace.updated_at
     }

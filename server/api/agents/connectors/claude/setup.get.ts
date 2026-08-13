@@ -60,7 +60,7 @@ async function loadClaudeInstall(supabase: ReturnType<typeof useSupabaseAdmin>, 
 
 function buildClaudeSetupResponse(mode: 'demo' | 'supabase', workspaceId: string, install: unknown = null) {
   const siteUrl = useRuntimeConfig().public.siteUrl || 'http://localhost:3000'
-  const remoteMcpUrl = `${String(siteUrl).replace(/\/$/, '')}/api/mcp`
+  const remoteMcpUrl = `${String(siteUrl).replace(/\/$/, '')}/mcp`
 
   return {
     mode,
@@ -74,9 +74,9 @@ function buildClaudeSetupResponse(mode: 'demo' | 'supabase', workspaceId: string
       capabilities: profileCapabilityMap[profile]
     })),
     outsideRepoSteps: [
-      'Claude Team Owner adds this remote MCP URL in Claude Organization settings > Connectors.',
-      'Claude staff connect the Fran CRM connector individually from Customize > Connectors.',
-      'OAuth client registration and callback approval must be configured in Claude/Fran deployment settings before production use.'
+      'Owner generates OAuth credentials in Settings → Claude connector and pastes Client ID + Secret into Claude Advanced settings.',
+      'Claude Team Owner adds the remote MCP URL (/mcp) in Claude Organization settings > Connectors.',
+      'Each staff member signs in with the same Google account used for CRM (or accepts a CRM invite on the consent screen) and clicks Connect.'
     ]
   }
 }

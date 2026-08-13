@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
       role: string
       plan: string
       hosting_mode: string
+      skums_workspace_id: string | null
       created_at: string
       updated_at: string
     }>>`
@@ -40,6 +41,7 @@ export default defineEventHandler(async (event) => {
         member.role::text as role,
         workspace.plan,
         workspace.hosting_mode,
+        workspace.skums_workspace_id::text,
         workspace.created_at,
         workspace.updated_at
       from public.crm_workspace_members member
@@ -62,6 +64,7 @@ export default defineEventHandler(async (event) => {
         role: workspace.role,
         plan: workspace.plan,
         hostingMode: workspace.hosting_mode,
+        skumsWorkspaceId: workspace.skums_workspace_id,
         createdAt: workspace.created_at,
         updatedAt: workspace.updated_at
       }))
@@ -98,7 +101,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: workspaces, error: workspaceError } = await supabase
     .from('crm_workspaces')
-    .select('id, name, slug, plan, hosting_mode, created_at, updated_at')
+    .select('id, name, slug, plan, hosting_mode, skums_workspace_id, created_at, updated_at')
     .in('id', workspaceIds)
     .order('created_at', { ascending: true })
 
@@ -122,6 +125,7 @@ export default defineEventHandler(async (event) => {
       role: roleByWorkspaceId.get(workspace.id) || 'member',
       plan: workspace.plan,
       hostingMode: workspace.hosting_mode,
+      skumsWorkspaceId: workspace.skums_workspace_id,
       createdAt: workspace.created_at,
       updatedAt: workspace.updated_at
     }))

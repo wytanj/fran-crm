@@ -109,21 +109,32 @@ describe('API payload contracts', () => {
     const payload = workspaceSetupPayloadSchema.parse({
       companyName: 'Acme Retail',
       slug: 'acme-retail',
-      plan: 'hosted_growth'
+      plan: 'hosted_growth',
+      skumsWorkspaceId: '22222222-2222-4222-8222-222222222222'
     })
 
     expect(payload).toMatchObject({
       companyName: 'Acme Retail',
       slug: 'acme-retail',
-      plan: 'hosted_growth'
+      plan: 'hosted_growth',
+      skumsWorkspaceId: '22222222-2222-4222-8222-222222222222'
     })
+  })
+
+  it('allows demo workspace setup without a SKUMS workspace id', () => {
+    expect(workspaceSetupPayloadSchema.parse({
+      companyName: 'Acme Retail',
+      slug: 'acme-retail',
+      plan: 'hosted_growth'
+    }).skumsWorkspaceId).toBeUndefined()
   })
 
   it('rejects unsafe workspace setup slugs', () => {
     expect(() => workspaceSetupPayloadSchema.parse({
       companyName: 'Acme Retail',
       slug: 'Acme Retail!',
-      plan: 'hosted_growth'
+      plan: 'hosted_growth',
+      skumsWorkspaceId: '22222222-2222-4222-8222-222222222222'
     })).toThrow()
   })
 

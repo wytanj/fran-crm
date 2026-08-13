@@ -8,6 +8,7 @@ export interface CrmWorkspaceSummary {
   role: CrmWorkspaceRole
   plan: PlanKey | string
   hostingMode: string
+  skumsWorkspaceId?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -26,6 +27,7 @@ export interface WorkspaceSetupPayload {
   companyName: string
   slug?: string
   plan: Exclude<PlanKey, 'open_source'>
+  skumsWorkspaceId?: string
 }
 
 export type CrmEntityKind =

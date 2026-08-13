@@ -18,7 +18,7 @@ definePageMeta({
 })
 
 const runtime = useRuntimeConfig()
-const { isConfigured, refreshSession, startAuthListener, user } = useCrmAuth()
+const { isConfigured, refreshSession, session, startAuthListener, user } = useCrmAuth()
 const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
 const {
   createInvite,
@@ -38,6 +38,22 @@ const teamError = ref('')
 const inviteEmail = ref('')
 const inviteRole = ref<CrmInviteRole>('member')
 const inviteBusy = ref(false)
+
+const mcpClient = ref<{
+  configured: boolean
+  source: string | null
+  client_id: string | null
+  secret_prefix: string | null
+  label: string | null
+  created_at: string | null
+  rotated_at: string | null
+  last_used_at: string | null
+} | null>(null)
+const mcpConnections = ref<Array<{ user_id: string; email: string | null; created_at: string | null; last_used_at: string | null }>>([])
+const mcpRemoteUrl = ref('')
+const mcpSecretOnce = ref('')
+const mcpBusy = ref(false)
+const mcpError = ref('')
 
 const canManageTeam = computed(() => {
   const role = primaryWorkspace.value?.role
@@ -90,6 +106,78 @@ async function handleCopyInvite(token: string) {
     copyNotice.value = 'Invite link copied'
   } catch {
     teamError.value = 'Could not copy link'
+  }
+}
+
+async function authHeaders() {
+  const active = session.value || await refreshSession()
+  if (!active?.access_token) throw new Error('Sign in required')
+  return { Authorization: `Bearer ${active.access_token}` }
+}
+
+async function loadMcpConnector() {
+  if (!primaryWorkspace.value?.id || !user.value) {
+    mcpClient.value = null
+    mcpConnections.value = []
+    return
+  }
+  try {
+    const data = await $fetch<{
+      remoteMcpUrl: string
+      client: NonNullable<typeof mcpClient.value>
+      connections: typeof mcpConnections.value
+    }>('/api/mcp-oauth/client', {
+      query: { workspaceId: primaryWorkspace.value.id },
+      headers: await authHeaders()
+    })
+    mcpRemoteUrl.value = data.remoteMcpUrl
+    mcpClient.value = data.client
+    mcpConnections.value = data.connections
+  } catch (e) {
+    mcpError.value = e instanceof Error ? e.message : 'Could not load Claude connector'
+  }
+}
+
+async function generateMcpCredentials() {
+  if (!primaryWorkspace.value?.id) return
+  mcpBusy.value = true
+  mcpError.value = ''
+  try {
+    const data = await $fetch<{ clientId: string; clientSecret: string; rotated: boolean; remoteMcpUrl: string }>('/api/mcp-oauth/client', {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: { workspaceId: primaryWorkspace.value.id }
+    })
+    mcpRemoteUrl.value = data.remoteMcpUrl
+    mcpSecretOnce.value = data.clientSecret
+    copyNotice.value = data.rotated
+      ? 'Secret rotated. Copy it now — it is shown once.'
+      : 'Credentials created. Copy the secret now — it is shown once.'
+    await loadMcpConnector()
+  } catch (e) {
+    mcpError.value = e instanceof Error ? e.message : 'Could not generate credentials'
+  } finally {
+    mcpBusy.value = false
+  }
+}
+
+async function disableMcpConnector() {
+  if (!primaryWorkspace.value?.id) return
+  if (!confirm('Disable the Claude connector? Staff will need to reconnect.')) return
+  mcpBusy.value = true
+  try {
+    await $fetch('/api/mcp-oauth/client', {
+      method: 'DELETE',
+      query: { workspaceId: primaryWorkspace.value.id },
+      headers: await authHeaders()
+    })
+    mcpSecretOnce.value = ''
+    await loadMcpConnector()
+    copyNotice.value = 'Claude connector disabled'
+  } catch (e) {
+    mcpError.value = e instanceof Error ? e.message : 'Could not disable connector'
+  } finally {
+    mcpBusy.value = false
   }
 }
 
@@ -174,6 +262,7 @@ onMounted(async () => {
   if (user.value || !isConfigured.value) {
     await loadWorkspaces()
     await loadTeam()
+    await loadMcpConnector()
   }
 })
 
@@ -181,11 +270,15 @@ watch(user, async (next) => {
   if (next) {
     await loadWorkspaces()
     await loadTeam()
+    await loadMcpConnector()
   }
 })
 
 watch(primaryWorkspace, async (ws) => {
-  if (ws?.id) await loadTeam()
+  if (ws?.id) {
+    await loadTeam()
+    await loadMcpConnector()
+  }
 })
 
 async function copyText(value: string, label: string) {
@@ -321,6 +414,62 @@ async function copyText(value: string, label: string) {
           <span class="integration-segment-actions">
             <button type="button" class="secondary-button" @click="handleCopyInvite(inv.token)">Copy link</button>
             <button type="button" class="secondary-button" @click="handleRevokeInvite(inv.id)">Revoke</button>
+          </span>
+        </article>
+      </div>
+    </section>
+
+    <section id="claude-connector" class="settings-panel integration-segment">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Agents</p>
+          <h2>Claude / MCP</h2>
+          <p class="muted-text">
+            One connector URL for the org. Each person signs in with Google (or accepts a CRM invite) so Claude inherits their CRM role.
+          </p>
+        </div>
+        <PlugZap :size="20" />
+      </div>
+
+      <div class="integration-id-panel">
+        <div class="env-row">
+          <strong>MCP URL</strong>
+          <span class="mono-value">{{ mcpRemoteUrl || `${crmBaseUrl}/mcp` }}</span>
+          <button class="secondary-button" type="button" @click="copyText(mcpRemoteUrl || `${crmBaseUrl}/mcp`, 'MCP URL')">Copy</button>
+        </div>
+        <div v-if="mcpClient?.client_id" class="env-row">
+          <strong>OAuth Client ID</strong>
+          <span class="mono-value">{{ mcpClient.client_id }}</span>
+          <button class="secondary-button" type="button" @click="copyText(mcpClient.client_id, 'Client ID')">Copy</button>
+        </div>
+        <div v-if="mcpSecretOnce" class="env-row">
+          <strong>Client secret (once)</strong>
+          <span class="mono-value">{{ mcpSecretOnce }}</span>
+          <button class="secondary-button" type="button" @click="copyText(mcpSecretOnce, 'Client secret')">Copy</button>
+        </div>
+        <div v-else-if="mcpClient?.secret_prefix" class="env-row">
+          <strong>Secret</strong>
+          <span>{{ mcpClient.secret_prefix }}… stored. Rotate to see a new value.</span>
+        </div>
+      </div>
+
+      <p v-if="mcpError" class="form-error">{{ mcpError }}</p>
+      <div class="setup-auth-actions">
+        <button class="primary-button" type="button" :disabled="mcpBusy || !canManageTeam || !primaryWorkspace" @click="generateMcpCredentials">
+          {{ mcpClient?.configured ? 'Rotate secret' : 'Generate credentials' }}
+        </button>
+        <button v-if="mcpClient?.configured && mcpClient.source === 'database'" class="secondary-button" type="button" :disabled="mcpBusy" @click="disableMcpConnector">
+          Disable
+        </button>
+      </div>
+      <p class="muted-text">Paste the Client ID and secret into Claude → Connectors → Advanced settings. Staff then click Connect and sign in here.</p>
+
+      <div v-if="mcpConnections.length" class="connector-table">
+        <p class="muted-text">Connected staff</p>
+        <article v-for="row in mcpConnections" :key="row.user_id" class="connector-row">
+          <span>
+            <strong>{{ row.email || row.user_id }}</strong>
+            <p>Last used {{ row.last_used_at || 'never' }}</p>
           </span>
         </article>
       </div>

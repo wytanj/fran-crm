@@ -56,9 +56,10 @@ Connector install records live in `crm_agent_connector_installs`. External staff
 
 Claude Team custom connector setup is split intentionally:
 
-- Fran CRM owns the remote MCP URL, setup metadata, tool contracts, permission checks, and audit logs.
-- Claude Team Owners still add the connector in Claude organization settings.
-- Individual staff still authenticate/connect before Claude can act on their behalf, unless a future managed-auth setup is explicitly adopted.
+- Fran CRM owns the remote MCP URL (`/mcp`), OAuth client rows, tool contracts, permission checks, and audit logs.
+- Claude Team Owners add the connector URL plus the workspace Client ID/Secret from Settings → Claude connector.
+- Individual staff click Connect, sign in with the same Google account as CRM (or accept a CRM invite on the consent screen), then authorize. Claude stores one connector config; each person gets their own token.
+- Offboarding is membership/invite revoke, not a shared key rotation.
 
 ## Operational Eligibility Checks
 

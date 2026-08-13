@@ -86,7 +86,7 @@ describe('agent documentation coverage', () => {
     expect(page).not.toContain("middleware: 'authenticated-client'")
     expect(page).not.toContain('useCrmAuth')
     // Reachable for signed-out visitors from both the nav and the landing page.
-    expect(sidebar).toContain('publicGroups: NavGroup[] = [\n  { items: [home, docs, simulator] }')
+    expect(sidebar.replace(/\r\n/g, '\n')).toContain('publicGroups: NavGroup[] = [\n  { items: [home, docs, simulator] }')
     expect(landing).toContain('to="/simulator"')
   })
 
