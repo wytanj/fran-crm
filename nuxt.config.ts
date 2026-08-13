@@ -27,6 +27,7 @@ export default defineNuxtConfig({
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     mcpOauthClientId: process.env.MCP_OAUTH_CLIENT_ID || '',
     mcpOauthClientSecret: process.env.MCP_OAUTH_CLIENT_SECRET || '',
+    workspaceCreateAllowlist: process.env.WORKSPACE_CREATE_ALLOWLIST || '',
     public: {
       appName: 'Fran CRM',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',

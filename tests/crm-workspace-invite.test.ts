@@ -28,6 +28,8 @@ describe('CRM workspace invites', () => {
     expect(settings).toContain('Invite + copy link')
     expect(setup).toContain('listMyPending')
     expect(setup).toContain('Join your team')
+    expect(setup).toContain('canCreateWorkspace')
+    expect(setup).toContain('Ask an owner to invite you')
     expect(invite).toContain('acceptInvite')
     expect(composable).toContain('accept_crm_workspace_invite')
   })

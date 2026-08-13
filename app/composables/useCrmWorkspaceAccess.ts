@@ -11,6 +11,8 @@ export function useCrmWorkspaceAccess() {
 
   const primaryWorkspace = computed(() => access.value?.workspaces[0] || null)
   const requiresSetup = computed(() => Boolean(access.value?.requiresSetup))
+  const canCreateWorkspace = computed(() => Boolean(access.value?.canCreateWorkspace))
+  const createKind = computed(() => access.value?.createKind || null)
 
   async function getAuthHeaders() {
     if (!isConfigured.value) {
@@ -84,6 +86,8 @@ export function useCrmWorkspaceAccess() {
       access.value = {
         mode: response.mode,
         requiresSetup: false,
+        canCreateWorkspace: access.value?.canCreateWorkspace ?? false,
+        createKind: access.value?.createKind || null,
         user: access.value?.user || null,
         workspaces: [response.workspace]
       }
@@ -100,6 +104,8 @@ export function useCrmWorkspaceAccess() {
 
   return {
     access,
+    canCreateWorkspace,
+    createKind,
     createWorkspace,
     ensureWorkspaces,
     error,

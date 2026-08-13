@@ -1,5 +1,6 @@
 export type PlanKey = 'open_source' | 'hosted_growth' | 'hosted_scale'
 export type CrmWorkspaceRole = 'owner' | 'admin' | 'member' | 'agent'
+export type WorkspaceCreateKind = 'sandbox' | 'production'
 
 export interface CrmWorkspaceSummary {
   id: string
@@ -16,6 +17,8 @@ export interface CrmWorkspaceSummary {
 export interface CrmWorkspaceAccessResponse {
   mode: 'demo' | 'supabase'
   requiresSetup: boolean
+  canCreateWorkspace: boolean
+  createKind: WorkspaceCreateKind | null
   user: {
     id: string
     email: string

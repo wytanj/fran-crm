@@ -1,3 +1,5 @@
+import { workspaceCreateEligibility } from '../../../utils/workspace-onboarding'
+
 export default defineEventHandler(async (event) => {
   const supabase = useSupabaseAdmin()
   const sql = useCrmPostgres()
@@ -6,6 +8,8 @@ export default defineEventHandler(async (event) => {
     return {
       mode: 'demo',
       requiresSetup: false,
+      canCreateWorkspace: true,
+      createKind: 'production' as const,
       user: null,
       workspaces: [
         {
@@ -21,6 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { user } = await requireSupabaseUser(event, supabase || undefined)
+  const eligibility = workspaceCreateEligibility(user.email)
 
   if (sql) {
     const workspaces = await sql<Array<{
@@ -53,6 +58,8 @@ export default defineEventHandler(async (event) => {
     return {
       mode: 'supabase',
       requiresSetup: workspaces.length === 0,
+      canCreateWorkspace: eligibility.canCreateWorkspace,
+      createKind: eligibility.createKind,
       user: {
         id: user.id,
         email: user.email || ''
@@ -91,6 +98,8 @@ export default defineEventHandler(async (event) => {
     return {
       mode: 'supabase',
       requiresSetup: true,
+      canCreateWorkspace: eligibility.canCreateWorkspace,
+      createKind: eligibility.createKind,
       user: {
         id: user.id,
         email: user.email || ''
@@ -114,6 +123,8 @@ export default defineEventHandler(async (event) => {
   return {
     mode: 'supabase',
     requiresSetup: false,
+    canCreateWorkspace: eligibility.canCreateWorkspace,
+    createKind: eligibility.createKind,
     user: {
       id: user.id,
       email: user.email || ''

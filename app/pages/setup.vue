@@ -8,7 +8,15 @@ definePageMeta({
 })
 
 const { isConfigured, session, signInWithGoogle, user } = useCrmAuth()
-const { createWorkspace, error, loadWorkspaces, pending, primaryWorkspace } = useCrmWorkspaceAccess()
+const {
+  canCreateWorkspace,
+  createKind,
+  createWorkspace,
+  error,
+  loadWorkspaces,
+  pending,
+  primaryWorkspace
+} = useCrmWorkspaceAccess()
 const { acceptInvite, listMyPending } = useCrmWorkspaceInvites()
 
 const form = reactive<WorkspaceSetupPayload>({
@@ -43,12 +51,17 @@ const joinError = ref('')
 const openSkumsWorkspaces = computed(() => skumsWorkspaces.value.filter((workspace) => !workspace.alreadyLinked))
 const linkedSkumsWorkspaces = computed(() => skumsWorkspaces.value.filter((workspace) => workspace.alreadyLinked))
 const mustSignIn = computed(() => isConfigured.value && !user.value)
+const isSandboxCreate = computed(() => createKind.value === 'sandbox')
 const submitLabel = computed(() => {
   if (primaryWorkspace.value) {
     return 'Open company workspace'
   }
 
-  return creatingWorkspace.value ? 'Creating workspace' : 'Create company workspace'
+  if (creatingWorkspace.value) {
+    return isSandboxCreate.value ? 'Creating sandbox workspace' : 'Creating workspace'
+  }
+
+  return isSandboxCreate.value ? 'Create sandbox workspace' : 'Create company workspace'
 })
 const workspaceLoadingTitle = computed(() => creatingWorkspace.value ? 'Creating workspace' : 'Loading workspace access')
 const workspaceLoadingDetail = computed(() => {
@@ -81,6 +94,14 @@ function titleCase(input: string) {
 }
 
 function inferCompanyName(email?: string) {
+  if (createKind.value === 'sandbox') {
+    return 'Fran Sandbox'
+  }
+
+  if (createKind.value === 'production') {
+    return 'Fran'
+  }
+
   const domain = email?.split('@')[1]?.split('.')[0] || ''
   const blockedDomains = new Set(['gmail', 'googlemail', 'hotmail', 'icloud', 'me', 'outlook', 'proton', 'yahoo'])
 
@@ -148,9 +169,9 @@ async function loadPendingInvites() {
   joinError.value = ''
   try {
     pendingInvites.value = await listMyPending()
-    showCreateForm.value = pendingInvites.value.length === 0
+    showCreateForm.value = pendingInvites.value.length === 0 && canCreateWorkspace.value
   } catch {
-    showCreateForm.value = true
+    showCreateForm.value = canCreateWorkspace.value
   } finally {
     loadingInvites.value = false
   }
@@ -178,6 +199,10 @@ watch(user, async () => {
   if (user.value && !primaryWorkspace.value) {
     await loadPendingInvites()
   }
+})
+
+watch(createKind, () => {
+  fillSuggestedCompany()
 })
 
 watch(() => form.companyName, (companyName) => {
@@ -262,9 +287,17 @@ async function submitSetup() {
       <div>
         <p class="eyebrow">Company setup</p>
         <h2 v-if="pendingInvites.length && !primaryWorkspace">Join your team</h2>
+        <h2 v-else-if="!canCreateWorkspace && !primaryWorkspace">Ask an owner to invite you</h2>
+        <h2 v-else-if="isSandboxCreate && !primaryWorkspace">Create a sandbox CRM</h2>
         <h2 v-else>Attach CRM to a SKUMS workspace</h2>
         <p v-if="pendingInvites.length && !primaryWorkspace">
           Accept an invite to Fran CRM. Prefer this over creating a second tenant on the same SKUMS workspace.
+        </p>
+        <p v-else-if="!canCreateWorkspace && !primaryWorkspace">
+          {{ user?.email || 'This account' }} isn't allowed to create a CRM workspace. Ask a Fran owner to invite this email, then sign in again.
+        </p>
+        <p v-else-if="isSandboxCreate && !primaryWorkspace">
+          This Google account can create an isolated dummy workspace. Production Fran CRM stays on @heyfran.com.
         </p>
         <p v-else>CRM must live on an existing Fran SKUMS business workspace. Invite colleagues after that link exists.</p>
       </div>
@@ -304,6 +337,10 @@ async function submitSetup() {
         </div>
 
         <template v-if="!mustSignIn && !primaryWorkspace && !loadingInvites">
+          <div v-if="!canCreateWorkspace && !pendingInvites.length" class="notice-bar">
+            You're not a member yet. Joining Fran CRM is invite-only unless this Google account is on the create allowlist.
+          </div>
+
           <div v-if="pendingInvites.length" class="space-stack">
             <article v-for="inv in pendingInvites" :key="inv.id" class="notice-bar">
               <strong>{{ inv.workspace_name }}</strong>
@@ -316,7 +353,7 @@ async function submitSetup() {
             </article>
             <p v-if="joinError" class="form-error">{{ joinError }}</p>
             <button
-              v-if="!showCreateForm"
+              v-if="!showCreateForm && canCreateWorkspace"
               type="button"
               class="secondary-button"
               @click="showCreateForm = true"
@@ -325,7 +362,10 @@ async function submitSetup() {
             </button>
           </div>
 
-          <form v-if="showCreateForm || !pendingInvites.length" class="space-stack" @submit.prevent="submitSetup">
+          <form v-if="canCreateWorkspace && (showCreateForm || !pendingInvites.length)" class="space-stack" @submit.prevent="submitSetup">
+            <p v-if="isSandboxCreate" class="notice-bar">
+              Sandbox tenant — isolated from the real @heyfran.com Fran workspace.
+            </p>
             <p v-if="pendingInvites.length" class="muted-text">
               Creating a new CRM tenant still needs a SKUMS workspace that is not already linked. Prefer joining if you were invited.
             </p>

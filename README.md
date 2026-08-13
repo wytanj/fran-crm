@@ -69,6 +69,9 @@ NUXT_PUBLIC_SUPABASE_KEY=...
 SUPABASE_DB_URL=...
 # Optional server-side Data API fallback.
 SUPABASE_SERVICE_ROLE_KEY=...
+# Exact emails or domains that may create a CRM tenant. Everyone else joins by invite.
+# @heyfran.com is the real workspace; wytanj@gmail.com is the isolated sandbox.
+WORKSPACE_CREATE_ALLOWLIST=jeremy@heyfran.com,wytanj@gmail.com
 ```
 
 Use the Supabase pooler form for `SUPABASE_DB_URL` in hosted environments that do not have IPv6 access to the direct database host:
@@ -79,7 +82,7 @@ SUPABASE_DB_URL=postgresql://postgres.<project-ref>:<password>@aws-1-ap-southeas
 
 The browser-facing Supabase key is for Auth. CRM reads and writes should flow through workspace-aware Nuxt API routes backed by `SUPABASE_DB_URL` or a server-only Supabase key.
 
-For Google sign-up, enable the Google provider in Supabase Auth and allow each app callback URL that staff use, for example `http://localhost:3000/confirm`, `http://127.0.0.1:3000/confirm`, and the production `${NUXT_PUBLIC_SITE_URL}/confirm`. PKCE sign-in stores a verifier in the browser origin that starts the flow, so the app redirects back to the active browser origin before `/confirm?next=/setup` creates the master company workspace through `POST /api/crm/workspaces`.
+For Google sign-up, enable the Google provider in Supabase Auth and allow each app callback URL that staff use, for example `http://localhost:3000/confirm`, `http://127.0.0.1:3000/confirm`, and the production `${NUXT_PUBLIC_SITE_URL}/confirm`. PKCE sign-in stores a verifier in the browser origin that starts the flow, so the app redirects back to the active browser origin before `/confirm?next=/setup`. `POST /api/crm/workspaces` only creates a tenant when the signed-in email is on `WORKSPACE_CREATE_ALLOWLIST`; everyone else must accept an invite.
 
 ## Verification
 

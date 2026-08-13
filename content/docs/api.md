@@ -369,6 +369,8 @@ Response fields:
 
 - `mode`
 - `requiresSetup`
+- `canCreateWorkspace`
+- `createKind`
 - `user`
 - `workspaces`
 
@@ -387,6 +389,8 @@ Payload:
   "plan": "hosted_growth"
 }
 ```
+
+Hosted create is restricted to `WORKSPACE_CREATE_ALLOWLIST`. `@heyfran.com` creates the real Fran tenant; `wytanj@gmail.com` creates an isolated sandbox. Everyone else must accept a workspace invite. If the caller already belongs to a CRM workspace, the route returns that membership instead of inserting another tenant.
 
 The route creates the workspace, owner membership, initial field definitions, planned data sources, trial subscription boundary, billing-customer boundary, and audit event. It is the first step after hosted sign-in.
 

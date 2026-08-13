@@ -645,6 +645,8 @@ Response shape:
 
 - `mode`: `demo` or `supabase`.
 - `requiresSetup`: `true` when the user has no workspace membership.
+- `canCreateWorkspace`: `true` when the signed-in email or domain is on `WORKSPACE_CREATE_ALLOWLIST`.
+- `createKind`: `production` for `@heyfran.com`, `sandbox` for any other allowlisted identity (for example `wytanj@gmail.com`), or `null` when create is forbidden.
 - `user`: signed-in Supabase user summary.
 - `workspaces`: workspace summaries with `id`, `name`, `slug`, `role`, `plan`, `hostingMode`, and `skumsWorkspaceId`.
 
@@ -670,6 +672,9 @@ Payload:
 Rules:
 
 - Supabase mode requires `Authorization: Bearer <access_token>`.
+- Creating a new tenant is restricted to `WORKSPACE_CREATE_ALLOWLIST` (exact emails or domains). Everyone else joins through `crm_workspace_invites`.
+- `@heyfran.com` creates the real Fran workspace. `wytanj@gmail.com` creates an isolated sandbox. One CRM workspace per Google account.
+- If the caller already has a membership, the route returns that workspace instead of inserting a second tenant.
 - `skumsWorkspaceId` is required and must be a SKUMS workspace the user already belongs to.
 - One CRM tenant per SKUMS workspace (`crm_workspaces.skums_workspace_id` unique).
 - The creating user becomes `owner` in `crm_workspace_members`.

@@ -8,7 +8,7 @@ kicker: Model
 
 Fran CRM starts from crmOS workspace-scoped graph primitives, then installs Fran defaults for member identity, loyalty status, beauty profile context, and POS-safe counter projection.
 
-Users set up a company workspace first. The company maps to `crm_workspaces`, and the creating user becomes the initial `owner` in `crm_workspace_members`; later humans, agents, and integrations are permissioned inside that workspace.
+Users set up a company workspace first. The company maps to `crm_workspaces`, and the creating user becomes the initial `owner` in `crm_workspace_members`; later humans, agents, and integrations are permissioned inside that workspace. Only identities on `WORKSPACE_CREATE_ALLOWLIST` can create a tenant (`@heyfran.com` is the real Fran workspace, `wytanj@gmail.com` is an isolated sandbox). Everyone else joins through an invite.
 
 | Entity type | Purpose |
 | --- | --- |

@@ -2,6 +2,11 @@ import { shopifyCustomerFields } from '../../../utils/demo-crm'
 import { workspaceSetupPayloadSchema } from '../../../utils/contracts'
 import { getDefaultProfilePacks, toDbFieldRow, toDbProfilePackRow } from '../../../utils/profile-packs'
 import { assertSkumsWorkspaceMembership, syncSkumsCrmLink } from '../../../utils/skums-workspaces'
+import {
+  isCreateAllowed,
+  resolveWorkspaceCreateKind,
+  WORKSPACE_CREATE_FORBIDDEN
+} from '../../../utils/workspace-onboarding'
 
 const plannedSources = [
   { key: 'shopify', label: 'Shopify', source_type: 'commerce', status: 'planned' },
@@ -95,6 +100,96 @@ export default defineEventHandler(async (event) => {
   }
 
   const { user } = await requireSupabaseUser(event, supabase || undefined)
+  const createKind = resolveWorkspaceCreateKind(user.email)
+
+  if (sql) {
+    const existing = await sql<Array<{
+      id: string
+      name: string
+      slug: string
+      plan: string
+      hosting_mode: string
+      skums_workspace_id: string | null
+      created_at: string
+      updated_at: string
+    }>>`
+      select
+        workspace.id::text,
+        workspace.name,
+        workspace.slug,
+        workspace.plan,
+        workspace.hosting_mode,
+        workspace.skums_workspace_id::text,
+        workspace.created_at,
+        workspace.updated_at
+      from public.crm_workspace_members member
+      join public.crm_workspaces workspace on workspace.id = member.workspace_id
+      where member.user_id = ${user.id}::uuid
+      order by member.created_at asc
+      limit 1
+    `
+
+    if (existing[0]) {
+      const workspace = existing[0]
+      return {
+        mode: 'supabase',
+        workspace: {
+          id: workspace.id,
+          name: workspace.name,
+          slug: workspace.slug,
+          role: 'owner',
+          plan: workspace.plan,
+          hostingMode: workspace.hosting_mode,
+          skumsWorkspaceId: workspace.skums_workspace_id,
+          createdAt: workspace.created_at,
+          updatedAt: workspace.updated_at
+        }
+      }
+    }
+  } else if (supabase) {
+    const { data: membership } = await supabase
+      .from('crm_workspace_members')
+      .select('workspace_id, role, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (membership?.workspace_id) {
+      const { data: existingWorkspace, error: existingError } = await supabase
+        .from('crm_workspaces')
+        .select('id, name, slug, plan, hosting_mode, skums_workspace_id, created_at, updated_at')
+        .eq('id', membership.workspace_id)
+        .single()
+
+      if (existingError) {
+        throw createError({ statusCode: 500, statusMessage: existingError.message })
+      }
+
+      return {
+        mode: 'supabase',
+        workspace: {
+          id: existingWorkspace.id,
+          name: existingWorkspace.name,
+          slug: existingWorkspace.slug,
+          role: membership.role || 'owner',
+          plan: existingWorkspace.plan,
+          hostingMode: existingWorkspace.hosting_mode,
+          skumsWorkspaceId: existingWorkspace.skums_workspace_id,
+          createdAt: existingWorkspace.created_at,
+          updatedAt: existingWorkspace.updated_at
+        }
+      }
+    }
+  }
+
+  if (!isCreateAllowed(user.email)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: WORKSPACE_CREATE_FORBIDDEN
+    })
+  }
+
   if (!body.skumsWorkspaceId) {
     throw createError({
       statusCode: 400,
@@ -277,7 +372,7 @@ export default defineEventHandler(async (event) => {
           'workspace.created',
           'workspace',
           ${createdWorkspace.id}::uuid,
-          ${JSON.stringify({ plan: body.plan, hostingMode: 'hosted', skumsWorkspaceId: body.skumsWorkspaceId, defaultProfilePacks: getDefaultProfilePacks().map((pack) => pack.key) })}::jsonb
+          ${JSON.stringify({ plan: body.plan, hostingMode: 'hosted', skumsWorkspaceId: body.skumsWorkspaceId, createKind, byEmail: user.email || '', defaultProfilePacks: getDefaultProfilePacks().map((pack) => pack.key) })}::jsonb
         )
       `
 
@@ -476,6 +571,8 @@ export default defineEventHandler(async (event) => {
         plan: body.plan,
         hostingMode: 'hosted',
         skumsWorkspaceId: body.skumsWorkspaceId,
+        createKind,
+        byEmail: user.email || '',
         defaultProfilePacks: defaultPacks.map((pack) => pack.key)
       }
     })

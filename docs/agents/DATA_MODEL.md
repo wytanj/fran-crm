@@ -14,6 +14,8 @@ Related tables:
 
 Workspace setup creates `crm_workspaces` first, then inserts the creator as `owner` in `crm_workspace_members`. Later CRM users, agents, and integration actors should be added under this workspace boundary rather than as global tenants.
 
+Creating a new tenant is allowlist-gated by `WORKSPACE_CREATE_ALLOWLIST` (exact emails or domains). `jeremy@heyfran.com` / `@heyfran.com` create the real Fran workspace. `wytanj@gmail.com` creates an isolated sandbox. Joining an existing workspace is invite-only via `crm_workspace_invites`. One Google account maps to one CRM workspace.
+
 A hosted CRM tenant must bind to an existing Fran SKUMS business workspace via `crm_workspaces.skums_workspace_id` (unique). Prefer joining a CRM invite over creating a second tenant on the same SKUMS workspace. When the shared `workspace_crm_links` table is present, setup upserts the SKUMS → CRM link so POS loyalty stays on the SKUMS hub.
 
 MCP OAuth uses the same membership table as the web app:
