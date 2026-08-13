@@ -291,11 +291,9 @@ function slugify(value: string) {
   <div class="docs-reader">
     <aside class="docs-sidebar-panel" aria-label="Documentation navigation">
       <NuxtLink class="docs-home-link" to="/">
-        <span class="docs-home-mark">
-          <BookOpen :size="18" />
-        </span>
+        <span class="docs-home-mark">FR</span>
         <span>
-          <strong>Fran CRM Docs</strong>
+          <strong>Fran CRM</strong>
           <small>Contracts and operating notes</small>
         </span>
       </NuxtLink>

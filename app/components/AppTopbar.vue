@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { Building2, GitBranch, KeyRound, LoaderCircle, LogOut, Search, UserRound } from '@lucide/vue'
 
+defineEmits<{
+  'open-menu': []
+}>()
+
 const route = useRoute()
-const runtime = useRuntimeConfig()
 const query = ref('')
 const { isConfigured, loading: authLoading, refreshSession, signOut, startAuthListener, user } = useCrmAuth()
 const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
@@ -57,10 +60,8 @@ async function handleSignOut() {
 
 <template>
   <header class="topbar">
-    <div>
-      <p class="eyebrow">{{ runtime.public.appName }}</p>
-      <h1>{{ pageTitle }}</h1>
-    </div>
+    <button class="menu-button press" type="button" aria-label="Open menu" @click="$emit('open-menu')">☰</button>
+    <h1>{{ pageTitle }}</h1>
 
     <div class="topbar-actions">
       <form class="search-box" role="search" @submit.prevent="runTopbarSearch">
@@ -72,15 +73,15 @@ async function handleSignOut() {
           aria-label="Search customers"
         >
       </form>
-      <NuxtLink v-if="user" class="icon-button" to="/settings" title="API keys">
+      <NuxtLink v-if="user" class="icon-button press" to="/settings" title="API keys">
         <KeyRound :size="18" />
       </NuxtLink>
-      <a class="icon-button" href="https://github.com/wytanj/fran-crm" target="_blank" rel="noreferrer" title="Repository">
+      <a class="icon-button press" href="https://github.com/wytanj/fran-crm" target="_blank" rel="noreferrer" title="Repository">
         <GitBranch :size="18" />
       </a>
       <NuxtLink
         v-if="user"
-        class="workspace-button"
+        class="workspace-button press"
         :to="requiresSetup ? '/setup' : '/settings'"
         :title="requiresSetup ? 'Set up company' : 'Workspace settings'"
         :aria-busy="workspacePending"
@@ -92,15 +93,15 @@ async function handleSignOut() {
           <small>{{ workspacePending ? 'Workspace' : primaryWorkspace?.role || 'owner' }}</small>
         </span>
       </NuxtLink>
-      <button v-if="user" class="icon-button" type="button" title="Sign out" @click="handleSignOut">
+      <button v-if="user" class="icon-button press" type="button" title="Sign out" @click="handleSignOut">
         <LogOut :size="18" />
       </button>
       <span v-else-if="authLoading" class="user-button" role="status" aria-live="polite" aria-busy="true">
         <LoaderCircle class="button-spinner" :size="18" aria-hidden="true" />
         <span>Checking session</span>
       </span>
-      <NuxtLink v-else-if="isConfigured" class="user-button" to="/login">
-        <UserRound :size="18" />
+      <NuxtLink v-else-if="isConfigured" class="primary-button press" to="/login">
+        <UserRound :size="16" />
         <span>Sign in</span>
       </NuxtLink>
     </div>

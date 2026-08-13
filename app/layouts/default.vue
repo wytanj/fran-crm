@@ -1,9 +1,25 @@
 <template>
   <div class="app-shell">
-    <AppSidebar />
-    <main class="main-panel">
-      <AppTopbar />
-      <slot />
-    </main>
+    <div
+      v-if="drawerOpen"
+      class="sidebar-scrim"
+      @click="drawerOpen = false"
+    />
+    <AppSidebar :open="drawerOpen" @close="drawerOpen = false" />
+    <div class="main-panel">
+      <AppTopbar @open-menu="drawerOpen = true" />
+      <div class="main-content">
+        <slot />
+      </div>
+    </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const drawerOpen = ref(false)
+const route = useRoute()
+
+watch(() => route.fullPath, () => {
+  drawerOpen.value = false
+})
+</script>

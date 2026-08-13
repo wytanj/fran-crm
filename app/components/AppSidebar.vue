@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import {
-  Blocks,
+  BarChart3,
   Braces,
   Building2,
-  BarChart3,
   Database,
   FileText,
   FlaskConical,
@@ -13,6 +12,14 @@ import {
   Settings,
   Users
 } from '@lucide/vue'
+
+defineProps<{
+  open?: boolean
+}>()
+
+defineEmits<{
+  close: []
+}>()
 
 type NavItem = {
   label: string
@@ -64,7 +71,13 @@ const memberGroups: NavGroup[] = [
 ]
 
 const { loading: authLoading, refreshSession, startAuthListener, user } = useCrmAuth()
+const { primaryWorkspace } = useCrmWorkspaceAccess()
 const navGroups = computed(() => user.value ? memberGroups : publicGroups)
+
+const initials = computed(() => {
+  const email = user.value?.email || ''
+  return (email.charAt(0) || 'F').toUpperCase()
+})
 
 onMounted(async () => {
   startAuthListener()
@@ -73,16 +86,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <aside class="sidebar">
-    <NuxtLink class="brand" to="/">
-      <span class="brand-mark">
-        <Blocks :size="18" />
-      </span>
-      <span>
+  <aside class="sidebar" :class="{ 'is-open': open }" aria-label="Primary">
+    <div class="brand">
+      <NuxtLink to="/" @click="$emit('close')">
+        <span class="brand-mark">FR</span>
+      </NuxtLink>
+      <NuxtLink to="/" @click="$emit('close')">
         <strong>Fran CRM</strong>
         <small>Members and rewards</small>
-      </span>
-    </NuxtLink>
+      </NuxtLink>
+      <button class="sidebar-close press" type="button" aria-label="Close menu" @click="$emit('close')">✕</button>
+    </div>
 
     <nav class="nav-groups" aria-label="Primary">
       <section v-for="(group, index) in navGroups" :key="group.label || `group-${index}`" class="nav-group">
@@ -92,9 +106,10 @@ onMounted(async () => {
           :key="`${group.label || 'top'}-${item.to}`"
           :to="item.to"
           :title="item.label"
-          class="nav-link"
+          class="nav-link press"
+          @click="$emit('close')"
         >
-          <component :is="item.icon" :size="17" />
+          <component :is="item.icon" :size="16" />
           <span>{{ item.label }}</span>
         </NuxtLink>
       </section>
@@ -104,12 +119,12 @@ onMounted(async () => {
       </span>
     </nav>
 
-    <div class="sidebar-footer">
-      <Database :size="17" />
+    <NuxtLink class="sidebar-footer" :to="user ? '/settings' : '/login'" @click="$emit('close')">
+      <span class="sidebar-avatar">{{ initials }}</span>
       <div>
-        <strong>Supabase</strong>
-        <span>Workspace and loyalty data</span>
+        <strong>{{ user?.email || 'Fran CRM' }}</strong>
+        <span>{{ user ? (primaryWorkspace?.name || 'Workspace') : 'Sign in' }}</span>
       </div>
-    </div>
+    </NuxtLink>
   </aside>
 </template>

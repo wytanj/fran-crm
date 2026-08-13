@@ -17,9 +17,9 @@ const padding = {
 // Tiers are ranked, so they get an ordinal ramp (one hue, light to dark) rather
 // than three metallic hues. Validated with the dataviz palette checker.
 const tierColors: Record<FranMemberTier, string> = {
-  Bronze: '#d3a04a',
-  Silver: '#a4741d',
-  Gold: '#6b4a10'
+  Bronze: '#c4a070',
+  Silver: '#8b7355',
+  Gold: '#5c4030'
 }
 const tiers: FranMemberTier[] = ['Bronze', 'Silver', 'Gold']
 const segmentGap = 2

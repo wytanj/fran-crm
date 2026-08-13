@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: false,
+  layout: 'auth'
 })
 
 const route = useRoute()
@@ -58,9 +58,13 @@ async function handleAccept() {
 </script>
 
 <template>
-  <div class="auth-shell">
+  <div>
+    <div class="landing-hero-inner" style="margin-bottom: 24px; text-align: center">
+      <p class="eyebrow">Fran team</p>
+      <h1 class="h1-display" style="font-size: 36px">Fran CRM</h1>
+    </div>
     <article class="auth-panel">
-      <p class="eyebrow">Fran CRM</p>
+      <p class="eyebrow">Workspace invite</p>
       <h1 v-if="loading">Loading invite…</h1>
       <template v-else-if="preview?.status === 'pending'">
         <h1>Join {{ preview.workspace_name || 'workspace' }}</h1>
@@ -101,65 +105,3 @@ async function handleAccept() {
     </article>
   </div>
 </template>
-
-<style scoped>
-.auth-shell {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: var(--space-6);
-  background: var(--bg, #0f1419);
-}
-.auth-panel {
-  width: min(420px, 100%);
-  padding: var(--space-6);
-  border: 1px solid var(--line, #2a3340);
-  border-radius: var(--radius-lg, 12px);
-  background: var(--panel, #151b24);
-  display: grid;
-  gap: var(--space-4);
-}
-.auth-panel h1 {
-  margin: 0;
-  font-size: var(--text-xl, 1.35rem);
-}
-.primary-button,
-.secondary-button {
-  display: inline-flex;
-  justify-content: center;
-  min-height: 40px;
-  align-items: center;
-  padding: 0 1rem;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  text-decoration: none;
-}
-.primary-button {
-  background: #0d7377;
-  color: #fff;
-  font-weight: 600;
-}
-.secondary-button {
-  background: transparent;
-  border-color: #2a3340;
-  color: #c5d0dc;
-}
-.form-error {
-  color: #f87171;
-  font-weight: 600;
-  margin: 0;
-}
-.notice-text,
-.muted-text {
-  color: #94a3b8;
-  margin: 0;
-}
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.75rem;
-  color: #64748b;
-  margin: 0;
-}
-</style>

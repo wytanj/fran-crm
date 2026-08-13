@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { normalizeAuthNextPath } from '~/utils/auth-redirect'
 
+definePageMeta({
+  layout: 'auth'
+})
+
 const route = useRoute()
 const status = ref('Checking your session...')
 const error = ref('')
@@ -63,7 +67,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="auth-page">
+  <div>
     <LoadingPanel v-if="confirming" title="Checking your session" />
     <section v-else class="auth-panel">
       <p class="eyebrow">Auth confirmed</p>
@@ -73,3 +77,4 @@ onMounted(async () => {
     </section>
   </div>
 </template>
+

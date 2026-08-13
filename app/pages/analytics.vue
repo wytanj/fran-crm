@@ -118,12 +118,12 @@ const pointsSeries = computed(() => {
   return [
     {
       label: 'Issued',
-      color: '#0d8f83',
+      color: '#5c4030',
       points: trend.map((point) => ({ label: point.period, value: point.issued }))
     },
     {
       label: 'Redeemed',
-      color: '#bf5a12',
+      color: '#c47a1a',
       points: trend.map((point) => ({ label: point.period, value: point.redeemed }))
     }
   ]
