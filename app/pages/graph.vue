@@ -3,33 +3,23 @@ definePageMeta({
   middleware: 'authenticated-client'
 })
 
-const { refreshSession, startAuthListener, user } = useCrmAuth()
-const { loadWorkspaces, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
+const { primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
 const workspaceId = computed(() => primaryWorkspace.value?.id)
-const { data, pending, refresh } = await useCrmBootstrap(workspaceId)
-
+const { data, pending } = useCrmBootstrap()
 const graph = computed(() => data.value?.graph)
-
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
-
-  if (user.value) {
-    await loadWorkspaces()
-    await refresh()
-  }
-})
 </script>
 
 <template>
   <div class="page-stack">
-    <LoadingPanel v-if="pending" title="Loading CRM graph" />
-    <template v-else-if="graph">
-      <div v-if="requiresSetup" class="notice-bar">
+    <LoadingPanel v-if="pending" title="Loading CRM graph" detail="Checking your workspace, then the identity graph." />
+    <template v-else-if="requiresSetup">
+      <div class="notice-bar">
         Create your company workspace to load hosted data.
         <NuxtLink to="/setup">Set up company</NuxtLink>
       </div>
-      <div v-else-if="data?.mode === 'demo'" class="notice-bar">
+    </template>
+    <template v-else-if="graph">
+      <div v-if="data?.mode === 'demo'" class="notice-bar">
         Running on demo data. Add Supabase keys to use your own database.
       </div>
       <div class="notice-bar">
@@ -49,5 +39,6 @@ onMounted(async () => {
         <IntegrationRail :items="graph.integrationBacklog" />
       </div>
     </template>
+    <LoadingPanel v-else title="Loading CRM graph" />
   </div>
 </template>

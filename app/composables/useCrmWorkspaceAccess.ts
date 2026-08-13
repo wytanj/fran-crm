@@ -1,8 +1,11 @@
 import type { CrmWorkspaceAccessResponse, WorkspaceSetupPayload } from '~/types/crm'
 
+let workspacesInFlight: Promise<CrmWorkspaceAccessResponse | null> | null = null
+
 export function useCrmWorkspaceAccess() {
   const access = useState<CrmWorkspaceAccessResponse | null>('crm-workspace-access', () => null)
   const pending = useState('crm-workspace-pending', () => false)
+  const workspacesReady = useState('crm-workspaces-ready', () => false)
   const error = useState('crm-workspace-error', () => '')
   const { isConfigured, refreshSession, session } = useCrmAuth()
 
@@ -25,21 +28,45 @@ export function useCrmWorkspaceAccess() {
     }
   }
 
-  async function loadWorkspaces() {
+  async function loadWorkspaces(force = false) {
+    if (!force && workspacesReady.value && access.value) {
+      return access.value
+    }
+
+    if (!force && workspacesInFlight) {
+      return workspacesInFlight
+    }
+
     pending.value = true
     error.value = ''
 
-    try {
-      const headers = await getAuthHeaders()
-      access.value = await $fetch<CrmWorkspaceAccessResponse>('/api/crm/workspaces', { headers })
+    const request = (async () => {
+      try {
+        const headers = await getAuthHeaders()
+        access.value = await $fetch<CrmWorkspaceAccessResponse>('/api/crm/workspaces', { headers })
+        return access.value
+      } catch (loadError) {
+        error.value = loadError instanceof Error ? loadError.message : 'Unable to load CRM workspaces.'
+        access.value = null
+        return null
+      } finally {
+        pending.value = false
+        workspacesReady.value = true
+        workspacesInFlight = null
+      }
+    })()
+
+    workspacesInFlight = request
+    return request
+  }
+
+  async function ensureWorkspaces() {
+    if (!isConfigured.value || !session.value) {
+      workspacesReady.value = true
       return access.value
-    } catch (loadError) {
-      error.value = loadError instanceof Error ? loadError.message : 'Unable to load CRM workspaces.'
-      access.value = null
-      return null
-    } finally {
-      pending.value = false
     }
+
+    return loadWorkspaces(false)
   }
 
   async function createWorkspace(payload: WorkspaceSetupPayload) {
@@ -60,6 +87,7 @@ export function useCrmWorkspaceAccess() {
         user: access.value?.user || null,
         workspaces: [response.workspace]
       }
+      workspacesReady.value = true
 
       return response.workspace
     } catch (createError) {
@@ -73,10 +101,12 @@ export function useCrmWorkspaceAccess() {
   return {
     access,
     createWorkspace,
+    ensureWorkspaces,
     error,
     loadWorkspaces,
     pending,
     primaryWorkspace,
-    requiresSetup
+    requiresSetup,
+    workspacesReady
   }
 }

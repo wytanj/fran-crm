@@ -7,7 +7,7 @@ definePageMeta({
   middleware: 'authenticated-client'
 })
 
-const { isConfigured, refreshSession, session, signInWithGoogle, startAuthListener, user } = useCrmAuth()
+const { isConfigured, session, signInWithGoogle, user } = useCrmAuth()
 const { createWorkspace, error, loadWorkspaces, pending, primaryWorkspace } = useCrmWorkspaceAccess()
 const { acceptInvite, listMyPending } = useCrmWorkspaceInvites()
 
@@ -157,11 +157,10 @@ async function loadPendingInvites() {
 }
 
 onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
+  const { ensureReady } = useCrmAppReady()
+  await ensureReady()
 
   if (user.value || !isConfigured.value) {
-    await loadWorkspaces()
     await loadSkumsWorkspaces()
   }
 
@@ -216,7 +215,7 @@ async function joinInvite(inv: PendingCrmInvite) {
   joinError.value = ''
   try {
     await acceptInvite(inv.token)
-    await loadWorkspaces()
+    await loadWorkspaces(true)
     await navigateTo('/customers')
   } catch (e) {
     joinError.value = e instanceof Error ? e.message : 'Failed to join workspace'

@@ -70,18 +70,13 @@ const memberGroups: NavGroup[] = [
   }
 ]
 
-const { loading: authLoading, refreshSession, startAuthListener, user } = useCrmAuth()
+const { loading: authLoading, user } = useCrmAuth()
 const { primaryWorkspace } = useCrmWorkspaceAccess()
 const navGroups = computed(() => user.value ? memberGroups : publicGroups)
 
 const initials = computed(() => {
   const email = user.value?.email || ''
   return (email.charAt(0) || 'F').toUpperCase()
-})
-
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
 })
 </script>
 

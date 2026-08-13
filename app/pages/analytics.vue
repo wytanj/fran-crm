@@ -10,9 +10,7 @@ definePageMeta({
   middleware: 'authenticated-client'
 })
 
-const { refreshSession, session, startAuthListener, user } = useCrmAuth()
-const { loadWorkspaces, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
-const workspaceId = computed(() => primaryWorkspace.value?.id)
+const { requiresSetup } = useCrmWorkspaceAccess()
 const signupBucket = ref<FranSignupBucket>('day')
 const selectedRange = ref<'7d' | '30d' | '90d' | 'ytd'>('30d')
 const topLimit = ref(10)
@@ -48,10 +46,9 @@ const selectedDateRange = computed(() => {
   }
 })
 
-const { data: analytics, pending, refresh } = await useAsyncData('fran-analytics', async () => {
-  const activeWorkspaceId = workspaceId.value
-  const headers = activeWorkspaceId && session.value?.access_token
-    ? { Authorization: `Bearer ${session.value.access_token}` }
+const { data: analytics, pending } = useWorkspaceQuery('fran-analytics', async ({ workspaceId: activeWorkspaceId, token }) => {
+  const headers = activeWorkspaceId && token
+    ? { Authorization: `Bearer ${token}` }
     : undefined
   const query = {
     ...selectedDateRange.value,
@@ -68,9 +65,7 @@ const { data: analytics, pending, refresh } = await useAsyncData('fran-analytics
     headers,
     query
   })
-}, {
-  watch: [workspaceId, selectedRange, topLimit, atRiskDays, lapsedFromDays, lapsedToDays]
-})
+}, [selectedRange, topLimit, atRiskDays, lapsedFromDays, lapsedToDays])
 
 const latestCycle = computed(() => {
   const cycles = analytics.value?.evaluationCycles || []
@@ -181,16 +176,6 @@ const customerCards = computed(() => {
       detail: 'Current calendar month'
     }
   ]
-})
-
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
-
-  if (user.value) {
-    await loadWorkspaces()
-    await refresh()
-  }
 })
 
 function formatNumber(value: number) {
@@ -312,7 +297,7 @@ function formatIsoDate(date: Date) {
       <Activity :size="24" />
     </div>
 
-    <LoadingPanel v-if="pending" title="Loading analytics" />
+    <LoadingPanel v-if="pending" title="Loading analytics" detail="Checking your workspace, then loyalty reports." />
 
     <template v-else-if="analytics">
       <div v-if="requiresSetup" class="notice-bar">

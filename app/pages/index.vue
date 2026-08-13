@@ -5,11 +5,10 @@ definePageMeta({
   layout: false
 })
 
-const { refreshSession, startAuthListener, user } = useCrmAuth()
+const { ready, user, ensureReady } = useCrmAppReady()
 
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
+onMounted(() => {
+  void ensureReady()
 })
 
 const features = [
@@ -23,7 +22,13 @@ const features = [
 </script>
 
 <template>
-  <div v-if="!user" class="landing">
+  <div v-if="!ready" class="landing">
+    <div class="auth-layout">
+      <LoadingPanel title="Checking session" detail="Loading your Fran workspace." />
+    </div>
+  </div>
+
+  <div v-else-if="!user" class="landing">
     <nav class="landing-nav">
       <div class="landing-nav-inner">
         <div class="landing-brand">

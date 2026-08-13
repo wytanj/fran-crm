@@ -18,6 +18,15 @@
 <script setup lang="ts">
 const drawerOpen = ref(false)
 const route = useRoute()
+const { pending, ensureReady } = useCrmAppReady()
+const indicator = useLoadingIndicator()
+
+void ensureReady()
+
+watch(pending, (value) => {
+  if (value) indicator.start()
+  else indicator.finish()
+}, { immediate: true })
 
 watch(() => route.fullPath, () => {
   drawerOpen.value = false

@@ -6,7 +6,6 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { refreshSession, startAuthListener, user } = useCrmAuth()
 
 const billingNotice = computed(() => {
   if (route.query.checkout !== 'demo') {
@@ -43,9 +42,8 @@ const modes = [
   }
 ]
 
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
+onMounted(() => {
+  void useCrmAppReady().ensureReady()
 })
 </script>
 

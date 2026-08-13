@@ -18,8 +18,8 @@ definePageMeta({
 })
 
 const runtime = useRuntimeConfig()
-const { isConfigured, refreshSession, session, startAuthListener, user } = useCrmAuth()
-const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
+const { isConfigured, session, user } = useCrmAuth()
+const { ensureWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
 const {
   createInvite,
   inviteUrl,
@@ -110,7 +110,8 @@ async function handleCopyInvite(token: string) {
 }
 
 async function authHeaders() {
-  const active = session.value || await refreshSession()
+  const { ensureSession } = useCrmAuth()
+  const active = session.value || await ensureSession()
   if (!active?.access_token) throw new Error('Sign in required')
   return { Authorization: `Bearer ${active.access_token}` }
 }
@@ -257,10 +258,9 @@ const sourceConnectors = [
 ]
 
 onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
+  const { ensureReady } = useCrmAppReady()
+  await ensureReady()
   if (user.value || !isConfigured.value) {
-    await loadWorkspaces()
     await loadTeam()
     await loadMcpConnector()
   }
@@ -268,7 +268,7 @@ onMounted(async () => {
 
 watch(user, async (next) => {
   if (next) {
-    await loadWorkspaces()
+    await ensureWorkspaces()
     await loadTeam()
     await loadMcpConnector()
   }

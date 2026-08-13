@@ -36,9 +36,7 @@ type CustomerRow = {
 
 const route = useRoute()
 const router = useRouter()
-const { refreshSession, session, startAuthListener, user } = useCrmAuth()
-const { loadWorkspaces, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
-const workspaceId = computed(() => primaryWorkspace.value?.id)
+const { requiresSetup } = useCrmWorkspaceAccess()
 
 const search = ref(String(route.query.q || ''))
 const tierFilter = ref(String(route.query.tier || ''))
@@ -53,10 +51,9 @@ watch(search, (value) => {
   }, 200)
 })
 
-const { data, pending, refresh } = await useAsyncData('crm-customers', async () => {
-  const activeWorkspaceId = workspaceId.value
-  const headers = activeWorkspaceId && session.value?.access_token
-    ? { Authorization: `Bearer ${session.value.access_token}` }
+const { data, pending } = useWorkspaceQuery('crm-customers', async ({ workspaceId: activeWorkspaceId, token }) => {
+  const headers = activeWorkspaceId && token
+    ? { Authorization: `Bearer ${token}` }
     : undefined
 
   return await $fetch<{
@@ -73,9 +70,7 @@ const { data, pending, refresh } = await useAsyncData('crm-customers', async () 
       ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {})
     }
   })
-}, {
-  watch: [workspaceId, debouncedSearch, tierFilter]
-})
+}, [debouncedSearch, tierFilter])
 
 const customers = computed(() => data.value?.customers || [])
 const selected = computed(() => {
@@ -156,14 +151,6 @@ function selectCustomer(id: string) {
   selectedId.value = id
 }
 
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
-  if (user.value) {
-    await loadWorkspaces()
-    await refresh()
-  }
-})
 </script>
 
 <template>
@@ -180,7 +167,7 @@ onMounted(async () => {
       <Users :size="24" />
     </div>
 
-    <LoadingPanel v-if="pending && !data" title="Loading customers" />
+    <LoadingPanel v-if="pending && !data" title="Loading customers" detail="Checking your workspace, then members." />
 
     <template v-else>
       <div v-if="requiresSetup" class="notice-bar">

@@ -3,11 +3,13 @@ import { buildAuthRedirectUrl, resolveAuthBaseUrl } from '~/utils/auth-redirect'
 
 let browserSupabaseClient: SupabaseClient | null = null
 let authListenerStarted = false
+let sessionInFlight: Promise<Session | null> | null = null
 
 export function useCrmAuth() {
   const runtime = useRuntimeConfig()
   const session = useState<Session | null>('crm-auth-session', () => null)
   const loading = useState('crm-auth-loading', () => false)
+  const authReady = useState('crm-auth-ready', () => false)
   const error = useState('crm-auth-error', () => '')
 
   const isConfigured = computed(() => Boolean(runtime.public.supabaseUrl && runtime.public.supabaseKey))
@@ -59,6 +61,7 @@ export function useCrmAuth() {
 
     if (!client) {
       session.value = null
+      authReady.value = true
       return null
     }
 
@@ -80,7 +83,26 @@ export function useCrmAuth() {
       return null
     } finally {
       loading.value = false
+      authReady.value = true
     }
+  }
+
+  async function ensureSession() {
+    startAuthListener()
+
+    if (authReady.value) {
+      return session.value
+    }
+
+    if (sessionInFlight) {
+      return sessionInFlight
+    }
+
+    sessionInFlight = refreshSession().finally(() => {
+      sessionInFlight = null
+    })
+
+    return sessionInFlight
   }
 
   function getRedirectUrl(nextPath = '/setup') {
@@ -146,10 +168,15 @@ export function useCrmAuth() {
     }
 
     session.value = null
+    authReady.value = true
+    useState('crm-workspace-access').value = null
+    useState('crm-workspaces-ready').value = true
   }
 
   return {
+    authReady,
     error,
+    ensureSession,
     getClient,
     isConfigured,
     loading,

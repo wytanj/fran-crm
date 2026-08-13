@@ -7,8 +7,8 @@ defineEmits<{
 
 const route = useRoute()
 const query = ref('')
-const { isConfigured, loading: authLoading, refreshSession, signOut, startAuthListener, user } = useCrmAuth()
-const { loadWorkspaces, pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
+const { isConfigured, loading: authLoading, signOut, user } = useCrmAuth()
+const { pending: workspacePending, primaryWorkspace, requiresSetup } = useCrmWorkspaceAccess()
 
 const pageTitle = computed(() => {
   const labels: Record<string, string> = {
@@ -42,15 +42,6 @@ async function runTopbarSearch() {
   }
   await navigateTo({ path: '/customers', query: { q } })
 }
-
-onMounted(async () => {
-  startAuthListener()
-  await refreshSession()
-
-  if (user.value) {
-    await loadWorkspaces()
-  }
-})
 
 async function handleSignOut() {
   await signOut()

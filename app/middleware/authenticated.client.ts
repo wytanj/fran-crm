@@ -1,10 +1,12 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { refreshSession, startAuthListener, user } = useCrmAuth()
+  const { ensureSession, user } = useCrmAuth()
+  const indicator = useLoadingIndicator()
 
-  startAuthListener()
-
-  if (!user.value) {
-    await refreshSession()
+  indicator.start()
+  try {
+    await ensureSession()
+  } finally {
+    indicator.finish()
   }
 
   if (!user.value) {
