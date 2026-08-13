@@ -421,11 +421,19 @@ textarea {
   font-weight: 600;
 }
 
+.settings-panel .section-heading {
+  margin-bottom: var(--space-4);
+}
+
 /* Nav links reused inside a panel read as list rows, not sidebar items. */
 .settings-panel .nav-link {
   min-height: 42px;
   border: 1px solid var(--line);
   background: var(--panel-strong);
+}
+
+.settings-panel .nav-link + .nav-link {
+  margin-top: var(--space-2);
 }
 
 .settings-panel .nav-link span {
